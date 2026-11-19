@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEZZ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#ffffff;
+  --gold:#d4b04a;
+  --gold-light:#f5e6b8;
+  --gold-soft:#faf3dd;
+  --pastel-blue:#d6e4f0;
+  --pastel-pink:#f0d9e8;
+  --pastel-green:#d9ead3;
+  --text:#2b2b2b;
+  --text-soft:#6a6a6a;
+  --muted:#9a9a9a;
+  --danger:#e26a6a;
+  --online:#7bc47f;
+  --r-sm:10px; --r-md:16px; --r-lg:24px;
+  --sh-sm:0 2px 8px rgba(0,0,0,.05);
+  --sh-md:0 8px 24px rgba(0,0,0,.08);
+  --sh-lg:0 24px 64px rgba(0,0,0,.15);
+  --sw:280px;
+  --so:0px; /* 0 = closed / 280 = open */
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{
+  font-family:'Inter',system-ui,sans-serif;background:var(--white);color:var(--text);
+  height:100%;overflow:hidden;
+}
+
+/* ===== Main ===== */
+.main-content{
+  position:fixed;inset:0;padding:40px;display:flex;flex-direction:column;gap:14px;
+  background:linear-gradient(135deg,var(--pastel-blue) 0%,var(--white) 40%,var(--gold-soft) 100%);
+}
+.main-content h1{
+  font-size:2.5rem;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--gold) 0%,var(--pastel-pink) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.main-content p{color:var(--text-soft);max-width:500px;}
+
+/* ===== Sidebar ===== */
+.sidebar{
+  position:fixed;top:0;left:0;width:var(--sw);height:100vh;background:var(--white);
+  border-right:1px solid var(--gold-light);display:flex;flex-direction:column;
+  padding:24px 16px;z-index:100;box-shadow:var(--sh-md);
+  transform:translateX(calc(var(--so) - var(--sw)));
+  transition:transform .4s var(--ease);
+}
+.sidebar.no-trans{transition:none;}
+.sidebar-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:4px 8px 20px;border-bottom:1px solid var(--gold-soft);margin-bottom:12px;
+}
+.logo{font-weight:800;font-size:1.5rem;letter-spacing:3px;color:var(--gold);
+  animation:shimmer 3s ease-in-out infinite;}
+@keyframes shimmer{0%,100%{opacity:1}50%{opacity:.7}}
+
+.sidebar-nav{flex:1;display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+.nav-item{
+  display:flex;align-items:center;gap:14px;padding:12px 16px;
+  border-radius:var(--r-md);color:var(--text);text-decoration:none;
+  font-weight:500;font-size:.92rem;cursor:pointer;position:relative;
+  transition:background .2s,transform .2s var(--ease);
+}
+.nav-item::before{
+  content:'';position:absolute;inset:0;border-radius:var(--r-md);
+  background:linear-gradient(135deg,var(--gold-soft),var(--pastel-pink));
+  opacity:0;transition:opacity .2s;z-index:-1;
+}
+.nav-item:hover{transform:translateX(4px);}
+.nav-item:hover::before{opacity:1;}
+.nav-item.active{background:var(--gold-light);}
+.icon{width:20px;height:20px;flex-shrink:0;stroke:currentColor;fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ===== Perfil ===== */
+.profile-card{
+  display:flex;align-items:center;gap:12px;padding:10px 12px;
+  border-radius:var(--r-md);background:var(--pastel-blue);cursor:pointer;
+  margin-top:12px;transition:transform .2s var(--ease),box-shadow .2s;
+}
+.profile-card:hover{transform:translateY(-2px);box-shadow:var(--sh-md);}
+.profile-card:active{transform:scale(.98);}
+.avatar-wrap{position:relative;flex-shrink:0;}
+.avatar{width:40px;height:40px;border-radius:12px;object-fit:cover;
+  border:2px solid var(--white);background:var(--pastel-pink);display:block;}
+.avatar-state{
+  position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--white);background:var(--muted);transition:background .3s;
+}
+.avatar-state.online{background:var(--online);}
+.avatar-state.offline{background:var(--muted);}
+.avatar-state.disabled{background:var(--danger);}
+.profile-info{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}
+.nick{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.status-text{font-size:.72rem;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ===== Handle (aba de arrastar) ===== */
+#drag-handle{
+  position:fixed;top:50%;left:var(--so);transform:translateY(-50%);
+  width:26px;height:70px;background:var(--white);border-radius:0 14px 14px 0;
+  box-shadow:4px 0 12px rgba(0,0,0,.06);display:grid;place-items:center;
+  cursor:grab;z-index:101;touch-action:none;
+  border:1px solid var(--gold-light);border-left:none;
+  transition:left .4s var(--ease),background .2s;
+}
+#drag-handle.no-trans{transition:background .2s;}
+#drag-handle:active{cursor:grabbing;}
+#drag-handle:hover{background:var(--gold-light);}
+#drag-handle svg{width:14px;height:14px;stroke:var(--gold);fill:none;
+  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;
+  transition:transform .3s var(--ease);}
+#drag-handle.open svg{transform:rotate(180deg);}
+
+/* ===== Modal ===== */
+.modal{
+  position:fixed;inset:0;background:rgba(30,30,30,.35);
+  backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;
+  z-index:200;padding:16px;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.modal.show{opacity:1;pointer-events:auto;}
+.modal-content{
+  background:var(--white);width:min(540px,100%);max-height:90vh;overflow-y:auto;
+  border-radius:var(--r-lg);padding:0 0 24px;position:relative;box-shadow:var(--sh-lg);
+  transform:translateY(24px) scale(.97);transition:transform .3s var(--ease);
+}
+.modal.show .modal-content{transform:translateY(0) scale(1);}
+.close-btn{
+  position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;
+  border:none;background:rgba(255,255,255,.95);cursor:pointer;display:grid;place-items:center;
+  z-index:10;box-shadow:var(--sh-sm);transition:background .2s,transform .2s var(--ease);
+}
+.close-btn:hover{background:var(--pastel-pink);transform:rotate(90deg);}
+.close-btn svg{width:18px;height:18px;stroke:var(--text);stroke-width:2;stroke-linecap:round;}
+
+.preview-banner{
+  height:130px;background-color:var(--pastel-pink);background-size:cover;
+  background-position:center;border-radius:var(--r-lg) var(--r-lg) 0 0;
+  transition:background .3s;
+}
+.preview-avatar-wrap{margin-top:-44px;padding-left:24px;position:relative;z-index:2;}
+.preview-avatar{
+  width:88px;height:88px;border-radius:20px;border:4px solid var(--white);
+  object-fit:cover;background:var(--pastel-green);box-shadow:var(--sh-sm);
+}
+.preview-name{padding:12px 24px 0;font-weight:700;font-size:1.15rem;}
+.preview-status-text{padding:2px 24px 8px;font-size:.82rem;color:var(--text-soft);min-height:1.2em;}
+
+.profile-form{padding:16px 24px 0;display:flex;flex-direction:column;gap:14px;}
+.form-label{display:flex;flex-direction:column;gap:6px;font-size:.82rem;font-weight:600;}
+.form-label input[type=text],.form-label input[type=url],
+.form-label textarea,.form-label select{
+  padding:10px 12px;border:2px solid var(--gold-light);border-radius:var(--r-sm);
+  font-family:inherit;font-size:.88rem;outline:none;background:var(--white);
+  color:var(--text);transition:border-color .2s,background .2s;
+}
+.form-label input:focus,.form-label textarea:focus,.form-label select:focus{
+  border-color:var(--gold);background:var(--gold-soft);
+}
+.form-label textarea{resize:vertical;min-height:60px;}
+.upload-row{display:flex;gap:8px;align-items:stretch;}
+.upload-row input[type=url]{flex:1;}
+.upload-btn{
+  display:inline-flex;align-items:center;gap:6px;padding:10px 14px;
+  border-radius:var(--r-sm);background:var(--pastel-blue);color:var(--text);
+  font-weight:600;font-size:.8rem;cursor:pointer;
+  transition:background .2s,transform .15s;white-space:nowrap;
+}
+.upload-btn:hover{background:var(--pastel-pink);}
+.upload-btn:active{transform:scale(.96);}
+.upload-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.upload-btn input[type=file]{display:none;}
+.file-hint{font-size:.7rem;color:var(--muted);font-weight:400;}
+
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;
+  padding-top:16px;border-top:1px solid var(--gold-soft);}
+.btn{
+  padding:10px 22px;border-radius:var(--r-sm);border:none;font-family:inherit;
+  font-weight:600;font-size:.88rem;cursor:pointer;display:inline-flex;
+  align-items:center;gap:6px;transition:transform .15s,background .2s,box-shadow .2s;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--gold);color:var(--white);
+  box-shadow:0 4px 14px rgba(212,176,74,.35);}
+.btn-primary:hover{background:#c9a340;box-shadow:0 6px 20px rgba(212,176,74,.5);}
+.btn-secondary{background:var(--pastel-blue);color:var(--text);}
+.btn-secondary:hover{background:#c6d6e6;}
+
+/* ===== Toast ===== */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--text);color:var(--white);padding:12px 20px;border-radius:999px;
+  font-size:.85rem;font-weight:500;box-shadow:var(--sh-lg);opacity:0;
+  transition:transform .3s var(--ease),opacity .3s;z-index:1000;pointer-events:none;
+  display:flex;align-items:center;gap:8px;
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.toast svg{width:16px;height:16px;stroke:var(--gold);fill:none;
+  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+
+.loading-avatar{
+  background:linear-gradient(90deg,var(--pastel-blue),var(--pastel-pink),var(--pastel-blue));
+  background-size:200% 100%;animation:loading 1.5s ease-in-out infinite;
+}
+@keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+@media(max-width:640px){
+  .main-content{padding:24px 20px;}
+  .main-content h1{font-size:1.8rem;}
+}
+</style>
+</head>
+<body>
+
+<main class="main-content">
+  <h1>HEZZ</h1>
+  <p>Chat, call e vídeo. Deslize a aba lateral da esquerda para abrir o menu.</p>
+  <p style="font-size:.8rem;color:var(--muted);margin-top:auto;">
+    Base inicial • Firebase Realtime Database + Auth anônimo
+  </p>
+</main>
+
+<div id="drag-handle" aria-label="Abrir menu">
+  <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+</div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"><span class="logo">HEZZ</span></div>
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active" data-nav="home">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg>
+      <span>Início</span>
+    </a>
+    <a href="#" class="nav-item" data-nav="messages">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Mensagens</span>
+    </a>
+    <a href="#" class="nav-item" data-nav="calls">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
+      <span>Chamadas</span>
+    </a>
+    <a href="#" class="nav-item" data-nav="settings">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Configurações</span>
+    </a>
+  </nav>
+  <div class="profile-card" id="profile-card">
+    <div class="avatar-wrap">
+      <img id="sidebar-avatar" class="avatar loading-avatar" alt="Avatar" />
+      <span id="sidebar-state-dot" class="avatar-state"></span>
+    </div>
+    <div class="profile-info">
+      <span id="sidebar-nick" class="nick">Carregando...</span>
+      <span id="sidebar-status-text" class="status-text">Conectando...</span>
+    </div>
+  </div>
+</aside>
+
+<div class="modal" id="profile-modal">
+  <div class="modal-content">
+    <button class="close-btn" id="close-modal" aria-label="Fechar">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <div class="preview-banner" id="preview-banner"></div>
+    <div class="preview-avatar-wrap">
+      <img id="preview-avatar" class="preview-avatar" alt="Preview avatar" />
+    </div>
+    <div class="preview-name" id="preview-name">Seu nick</div>
+    <div class="preview-status-text" id="preview-status-text">Seu status aparecerá aqui</div>
+
+    <form class="profile-form" id="profile-form">
+      <label class="form-label">
+        <span>Banner (URL ou upload)</span>
+        <div class="upload-row">
+          <input type="url" id="banner-url" placeholder="https://exemplo.com/banner.gif" />
+          <label class="upload-btn">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload
+            <input type="file" id="banner-file" accept="image/*" />
+          </label>
+        </div>
+        <span class="file-hint">GIF, PNG, JPG • máx 5MB</span>
+      </label>
+
+      <label class="form-label">
+        <span>Foto (URL ou upload)</span>
+        <div class="upload-row">
+          <input type="url" id="avatar-url" placeholder="https://exemplo.com/foto.gif" />
+          <label class="upload-btn">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload
+            <input type="file" id="avatar-file" accept="image/*" />
+          </label>
+        </div>
+        <span class="file-hint">GIF, PNG, JPG • máx 5MB</span>
+      </label>
+
+      <label class="form-label">
+        <span>Nick</span>
+        <input type="text" id="nick-input" maxlength="32" placeholder="Seu nick" />
+      </label>
+
+      <label class="form-label">
+        <span>Bio</span>
+        <textarea id="bio-input" maxlength="300" placeholder="Fale sobre você..."></textarea>
+      </label>
+
+      <label class="form-label">
+        <span>Estado</span>
+        <select id="state-input">
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+          <option value="disabled">Desativado</option>
+        </select>
+      </label>
+
+      <label class="form-label">
+        <span>Status (escrito manualmente)</span>
+        <input type="text" id="status-input" maxlength="50" placeholder="Ex.: Bora de call" />
+      </label>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="cancel-btn">Cancelar</button>
+        <button type="submit" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-text"></span>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, update, get, onValue, onDisconnect, query, orderByChild, endAt, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBk0TzSvq4T4f27RbCUtHblQxvmkAI0dHE",
+  authDomain: "hezz-gg.firebaseapp.com",
+  projectId: "hezz-gg",
+  storageBucket: "hezz-gg.firebasestorage.app",
+  messagingSenderId: "944032998353",
+  appId: "1:944032998353:web:e5b079c669c2f6f3a736f0"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+const SIDEBAR_W       = 280;
+const MAX_FILE_SIZE   = 5 * 1024 * 1024;
+const TTL_OFFLINE_MS  = 30 * 60 * 1000;
+const HEARTBEAT_MS    = 60 * 1000;
+
+let currentUser = null;
+let isSidebarOpen = false;
+let heartbeatInt = null;
+let profileUnsub = null;
+let editBanner = "";
+let editAvatar = "";
+
+const $ = (id) => document.getElementById(id);
+const sidebar = document.querySelector(".sidebar");
+const dragHandle = $("drag-handle");
+const profileCard = $("profile-card");
+const profileModal = $("profile-modal");
+const profileForm = $("profile-form");
+
+const sidebarAvatar = $("sidebar-avatar");
+const sidebarNick = $("sidebar-nick");
+const sidebarStatusText = $("sidebar-status-text");
+const sidebarStateDot = $("sidebar-state-dot");
+
+const previewBanner = $("preview-banner");
+const previewAvatar = $("preview-avatar");
+const previewName = $("preview-name");
+const previewStatusText = $("preview-status-text");
+
+const bannerUrlInput = $("banner-url");
+const bannerFileInput = $("banner-file");
+const avatarUrlInput = $("avatar-url");
+const avatarFileInput = $("avatar-file");
+const nickInput = $("nick-input");
+const bioInput = $("bio-input");
+const stateInput = $("state-input");
+const statusInput = $("status-input");
+
+const toastEl = $("toast");
+const toastText = $("toast-text");
+
+/* ========= SIDEBAR: abrir/fechar + drag ========= */
+function setOffset(px, animate = true) {
+  document.documentElement.style.setProperty("--so", `${px}px`);
+  if (!animate) {
+    sidebar.classList.add("no-trans");
+    dragHandle.classList.add("no-trans");
+  } else {
+    sidebar.classList.remove("no-trans");
+    dragHandle.classList.remove("no-trans");
+  }
+}
+function setOpen(open) {
+  isSidebarOpen = open;
+  setOffset(open ? SIDEBAR_W : 0, true);
+  dragHandle.classList.toggle("open", open);
+}
+
+let drag = { active:false, startX:0, startOffset:0, moved:false };
+
+function onDown(e){
+  drag.active = true; drag.moved = false;
+  drag.startX = e.clientX;
+  drag.startOffset = isSidebarOpen ? SIDEBAR_W : 0;
+  setOffset(drag.startOffset, false);
+  if (e.pointerId !== undefined) dragHandle.setPointerCapture(e.pointerId);
+  e.preventDefault();
+}
+function onMove(e){
+  if (!drag.active) return;
+  const delta = e.clientX - drag.startX;
+  if (Math.abs(delta) > 4) drag.moved = true;
+  const o = Math.max(0, Math.min(SIDEBAR_W, drag.startOffset + delta));
+  setOffset(o, false);
+}
+function onUp(e){
+  if (!drag.active) return;
+  drag.active = false;
+  const delta = e.clientX - drag.startX;
+  if (!drag.moved) setOpen(!isSidebarOpen);
+  else setOpen(drag.startOffset + delta > SIDEBAR_W / 2);
+}
+
+dragHandle.addEventListener("pointerdown", onDown);
+window.addEventListener("pointermove", onMove);
+window.addEventListener("pointerup", onUp);
+window.addEventListener("pointercancel", onUp);
+
+profileCard.addEventListener("click", openProfileModal);
+
+/* ========= MODAL ========= */
+function openProfileModal(){
+  if (!currentUser) { showToast("Conectando..."); return; }
+  loadProfileIntoForm();
+  profileModal.classList.add("show");
+}
+function closeProfileModal(){ profileModal.classList.remove("show"); }
+$("close-modal").addEventListener("click", closeProfileModal);
+$("cancel-btn").addEventListener("click", closeProfileModal);
+profileModal.addEventListener("click", (e)=>{ if (e.target === profileModal) closeProfileModal(); });
+
+/* ========= PREVIEW TEMPO REAL ========= */
+function applyPreview(){
+  const banner = editBanner || bannerUrlInput.value.trim();
+  const avatar = editAvatar || avatarUrlInput.value.trim();
+
+  if (banner) previewBanner.style.backgroundImage = `url("${banner}")`;
+  else { previewBanner.style.backgroundImage = ""; previewBanner.style.backgroundColor = "var(--pastel-pink)"; }
+
+  if (avatar) previewAvatar.src = avatar;
+  else { previewAvatar.removeAttribute("src"); previewAvatar.style.background = "var(--pastel-green)"; }
+
+  previewName.textContent = nickInput.value.trim() || "Seu nick";
+  previewStatusText.textContent = statusInput.value.trim() || "Seu status aparecerá aqui";
+}
+bannerUrlInput.addEventListener("input", () => { editBanner = ""; applyPreview(); });
+avatarUrlInput.addEventListener("input", () => { editAvatar = ""; applyPreview(); });
+nickInput.addEventListener("input", applyPreview);
+statusInput.addEventListener("input", applyPreview);
+
+/* ========= UPLOAD BASE64 ========= */
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_FILE_SIZE) {
+      reject(new Error(`Arquivo maior que 5MB (${(file.size/1024/1024).toFixed(2)}MB)`));
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      console.warn("[HEZZ] Arquivos >500KB em base64 deixam o RTDB lento.");
+    }
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+bannerFileInput.addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try { editBanner = await fileToBase64(f); bannerUrlInput.value = ""; applyPreview(); showToast("Banner carregado"); }
+  catch (err) { showToast(err.message); }
+});
+avatarFileInput.addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try { editAvatar = await fileToBase64(f); avatarUrlInput.value = ""; applyPreview(); showToast("Foto carregada"); }
+  catch (err) { showToast(err.message); }
+});
+
+/* ========= TOAST ========= */
+let toastTimer = null;
+function showToast(msg){
+  toastText.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2500);
+}
+
+/* ========= LOGIN ANÔNIMO ========= */
+signInAnonymously(auth).catch((err) => {
+  console.error("Erro login:", err);
+  showToast("Erro ao conectar. Verifique as regras do Firebase.");
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  currentUser = user;
+  await ensureUserDoc(user.uid);
+  startHeartbeat(user.uid);
+  setupDisconnect(user.uid);
+  subscribeProfile(user.uid);
+  sweepExpired();
+});
+
+async function ensureUserDoc(uid){
+  const userRef = ref(db, `users/${uid}`);
+  const snap = await get(userRef);
+  if (!snap.exists()){
+    await set(userRef, {
+      uid,
+      nick: "Anônimo_" + uid.slice(0,4),
+      bio: "",
+      status: "",
+      state: "online",
+      avatarUrl: "",
+      bannerUrl: "",
+      isAnonymous: true,
+      createdAt: Date.now(),
+      lastSeen: Date.now(),
+      expireAt: Date.now() + TTL_OFFLINE_MS
+    });
+  } else {
+    await update(userRef, {
+      lastSeen: Date.now(),
+      expireAt: Date.now() + TTL_OFFLINE_MS
+    });
+  }
+}
+
+function startHeartbeat(uid){
+  if (heartbeatInt) clearInterval(heartbeatInt);
+  heartbeatInt = setInterval(() => {
+    if (!currentUser) return;
+    update(ref(db, `users/${uid}`), {
+      lastSeen: Date.now(),
+      expireAt: Date.now() + TTL_OFFLINE_MS
+    }).catch(() => {});
+  }, HEARTBEAT_MS);
+}
+
+function setupDisconnect(uid){
+  const userRef = ref(db, `users/${uid}`);
+  onDisconnect(userRef.child("expireAt")).set(Date.now() + TTL_OFFLINE_MS);
+  onDisconnect(userRef.child("lastSeen")).set(Date.now());
+}
+
+function subscribeProfile(uid){
+  if (profileUnsub) profileUnsub();
+  profileUnsub = onValue(ref(db, `users/${uid}`), (snap) => {
+    const d = snap.val();
+    if (d) renderProfile(d);
+  });
+}
+
+function renderProfile(d){
+  sidebarNick.textContent = d.nick || "Anônimo";
+  sidebarStatusText.textContent = d.status || labelState(d.state);
+  sidebarAvatar.src = d.avatarUrl || defaultAvatarSvg();
+  sidebarAvatar.classList.remove("loading-avatar");
+  sidebarStateDot.className = "avatar-state " + (d.state || "offline");
+}
+function labelState(s){
+  if (s === "online") return "Online";
+  if (s === "disabled") return "Desativado";
+  return "Offline";
+}
+function defaultAvatarSvg(){
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+    <rect width="40" height="40" fill="#d6e4f0"/>
+    <circle cx="20" cy="16" r="7" fill="#d4b04a"/>
+    <path d="M6 40c2-8 8-12 14-12s12 4 14 12z" fill="#d4b04a"/>
+  </svg>`;
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+
+/* ========= CARREGAR NO FORM ========= */
+function loadProfileIntoForm(){
+  get(ref(db, `users/${currentUser.uid}`)).then((snap) => {
+    const d = snap.val() || {};
+    nickInput.value = d.nick || "";
+    bioInput.value = d.bio || "";
+    stateInput.value = d.state || "online";
+    statusInput.value = d.status || "";
+    bannerUrlInput.value = d.bannerUrl && !d.bannerUrl.startsWith("data:") ? d.bannerUrl : "";
+    avatarUrlInput.value = d.avatarUrl && !d.avatarUrl.startsWith("data:") ? d.avatarUrl : "";
+    editBanner = d.bannerUrl && d.bannerUrl.startsWith("data:") ? d.bannerUrl : "";
+    editAvatar = d.avatarUrl && d.avatarUrl.startsWith("data:") ? d.avatarUrl : "";
+    applyPreview();
+  });
+}
+
+/* ========= SALVAR ========= */
+profileForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!currentUser) return;
+
+  const payload = {
+    nick: nickInput.value.trim() || "Anônimo",
+    bio: bioInput.value.trim(),
+    state: stateInput.value,
+    status: statusInput.value.trim(),
+    bannerUrl: editBanner || bannerUrlInput.value.trim(),
+    avatarUrl: editAvatar || avatarUrlInput.value.trim(),
+    lastSeen: Date.now(),
+    expireAt: Date.now() + TTL_OFFLINE_MS
+  };
+
+  try {
+    await update(ref(db, `users/${currentUser.uid}`), payload);
+    closeProfileModal();
+    showToast("Perfil salvo!");
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao salvar: " + (err.message || "verifique as regras"));
+  }
+});
+
+/* ========= SWEEPER: apaga docs expirados ========= */
+async function sweepExpired(){
+  try {
+    // margem de 60s pra não matar quem tá com heartbeat atrasado
+    const cutoff = Date.now() - 60 * 1000;
+    const q = query(ref(db, "users"), orderByChild("expireAt"), endAt(cutoff));
+    const snap = await get(q);
+    if (!snap.exists()) return;
+    const dels = [];
+    snap.forEach((child) => dels.push(remove(ref(db, `users/${child.key}`))));
+    const results = await Promise.allSettled(dels);
+    const ok = results.filter(r => r.status === "fulfilled").length;
+    if (ok > 0) console.log(`[sweeper] ${ok} perfil(is) expirado(s) apagado(s)`);
+  } catch (err) {
+    console.warn("[sweeper]", err.message);
+  }
+}
+setInterval(sweepExpired, 5 * 60 * 1000);
+
+/* ========= NAV PLACEHOLDER ========= */
+document.querySelectorAll(".nav-item").forEach((el) => {
+  el.addEventListener("click", (e) => {
+    e.preventDefault();
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+    el.classList.add("active");
+  });
+});
+</script>
+</body>
+</html>
