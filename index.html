@@ -10,7 +10,7 @@
 <style>
 :root{
   --white:#ffffff;
-  --gold:#e8b923;          /* amarelo quase dourado (vivo) */
+  --gold:#e8b923;
   --gold-light:#fdeaa8;
   --gold-soft:#fffaeb;
   --pastel-blue:#d6e4f0;
@@ -33,6 +33,26 @@
 html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
   color:var(--text);height:100%;overflow:hidden;}
 
+/* ===== Views ===== */
+.view{
+  position:fixed;inset:0;background:var(--white);z-index:150;
+  display:none;flex-direction:column;overflow-y:auto;
+}
+.view.active{display:flex;}
+.view-header{
+  display:flex;align-items:center;gap:16px;padding:16px 20px;
+  border-bottom:1px solid var(--gold-light);background:var(--white);
+  position:sticky;top:0;z-index:10;
+}
+.back-btn{
+  background:none;border:none;cursor:pointer;display:grid;place-items:center;
+  padding:8px;border-radius:50%;transition:background .2s;
+}
+.back-btn:hover{background:var(--gold-soft);}
+.back-btn svg{width:24px;height:24px;stroke:var(--text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.view-title{font-size:1.2rem;font-weight:700;flex:1;}
+
+/* ===== Main ===== */
 .main-content{
   position:fixed;inset:0;padding:40px;display:flex;flex-direction:column;gap:14px;
   background:linear-gradient(135deg,var(--pastel-blue) 0%,var(--white) 40%,var(--gold-soft) 100%);
@@ -75,16 +95,21 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
   font-weight:500;font-size:.92rem;cursor:pointer;position:relative;
   transition:background .2s,transform .2s var(--ease);
 }
-.nav-item::before{
-  content:'';position:absolute;inset:0;border-radius:var(--r-md);
-  background:linear-gradient(135deg,var(--gold-soft),var(--pastel-pink));
-  opacity:0;transition:opacity .2s;z-index:-1;
-}
 .nav-item:hover{transform:translateX(4px);}
-.nav-item:hover::before{opacity:1;}
 .nav-item.active{background:var(--gold-light);}
 .icon{width:20px;height:20px;flex-shrink:0;stroke:currentColor;fill:none;
   stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+/* Botão de criar servidor */
+.create-server-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px;margin-top:8px;border-radius:var(--r-md);
+  background:var(--pastel-green);color:var(--text);font-weight:600;
+  border:none;cursor:pointer;transition:background .2s,transform .2s;
+}
+.create-server-btn:hover{background:#c9dcb5;}
+.create-server-btn:active{transform:scale(.98);}
+.create-server-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
 
 /* ===== Perfil ===== */
 .profile-card{
@@ -111,7 +136,7 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
 .edit-hint{width:14px;height:14px;flex-shrink:0;stroke:var(--text-soft);fill:none;
   stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 
-/* ===== Handle (aba do meio) ===== */
+/* ===== Handle ===== */
 #drag-handle{
   position:fixed;top:50%;left:var(--so);transform:translateY(-50%);
   width:26px;height:70px;background:var(--white);border-radius:0 14px 14px 0;
@@ -127,52 +152,42 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
   stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
 #drag-handle .dot{fill:var(--gold);stroke:none;}
 
-/* ===== Modal ===== */
-.modal{
-  position:fixed;inset:0;background:rgba(30,30,30,.35);
-  backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;
-  z-index:200;padding:16px;opacity:0;pointer-events:none;transition:opacity .25s;
-}
-.modal.show{opacity:1;pointer-events:auto;}
-.modal-content{
-  background:var(--white);width:min(540px,100%);max-height:90vh;overflow-y:auto;
-  border-radius:var(--r-lg);padding:0 0 24px;position:relative;box-shadow:var(--sh-lg);
-  transform:translateY(24px) scale(.97);transition:transform .3s var(--ease);
-}
-.modal.show .modal-content{transform:translateY(0) scale(1);}
-.close-btn{
-  position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;
-  border:none;background:rgba(255,255,255,.95);cursor:pointer;display:grid;place-items:center;
-  z-index:10;box-shadow:var(--sh-sm);transition:background .2s,transform .2s var(--ease);
-}
-.close-btn:hover{background:var(--pastel-pink);transform:rotate(90deg);}
-.close-btn svg{width:18px;height:18px;stroke:var(--text);stroke-width:2;stroke-linecap:round;}
-
-.preview-banner{
-  height:130px;background-color:var(--pastel-pink);background-size:cover;
-  background-position:center;border-radius:var(--r-lg) var(--r-lg) 0 0;
-  transition:background .3s;
-}
-.preview-avatar-wrap{margin-top:-44px;padding-left:24px;position:relative;z-index:2;}
-.preview-avatar{
-  width:88px;height:88px;border-radius:20px;border:4px solid var(--white);
-  object-fit:cover;background:var(--pastel-green);box-shadow:var(--sh-sm);
-}
-.preview-name{padding:12px 24px 0;font-weight:700;font-size:1.15rem;}
-.preview-status-text{padding:2px 24px 8px;font-size:.82rem;color:var(--text-soft);min-height:1.2em;}
-
-.profile-form{padding:16px 24px 0;display:flex;flex-direction:column;gap:14px;}
-.form-label{display:flex;flex-direction:column;gap:6px;font-size:.82rem;font-weight:600;}
-.form-label input[type=text],.form-label input[type=url],
-.form-label textarea,.form-label select{
-  padding:10px 12px;border:2px solid var(--gold-light);border-radius:var(--r-sm);
-  font-family:inherit;font-size:.88rem;outline:none;background:var(--white);
+/* ===== Formulários ===== */
+.form-container{padding:24px;display:flex;flex-direction:column;gap:20px;max-width:540px;margin:0 auto;width:100%;}
+.form-group{display:flex;flex-direction:column;gap:8px;}
+.form-group label{font-size:.85rem;font-weight:600;color:var(--text);}
+.form-group input[type=text],.form-group input[type=url],.form-group textarea{
+  padding:12px;border:2px solid var(--gold-light);border-radius:var(--r-sm);
+  font-family:inherit;font-size:.9rem;outline:none;background:var(--white);
   color:var(--text);transition:border-color .2s,background .2s;
 }
-.form-label input:focus,.form-label textarea:focus,.form-label select:focus{
+.form-group input:focus,.form-group textarea:focus{
   border-color:var(--gold);background:var(--gold-soft);
 }
-.form-label textarea{resize:vertical;min-height:60px;}
+.form-group textarea{resize:vertical;min-height:80px;}
+
+.preview-banner{
+  height:160px;background-color:var(--pastel-pink);background-size:cover;
+  background-position:center;border-radius:var(--r-md);position:relative;
+  transition:background .3s;display:flex;align-items:flex-end;padding:16px;
+}
+.preview-avatar{
+  width:80px;height:80px;border-radius:20px;border:4px solid var(--white);
+  object-fit:cover;background:var(--pastel-green);box-shadow:var(--sh-sm);
+  margin-bottom:-40px;
+}
+.gradient-controls{
+  display:flex;align-items:center;gap:12px;background:var(--gold-soft);
+  padding:12px;border-radius:var(--r-sm);margin-top:10px;
+}
+.gradient-controls label{font-size:.8rem;display:flex;align-items:center;gap:8px;cursor:pointer;}
+.gradient-controls input[type=color]{
+  width:32px;height:32px;border:none;border-radius:50%;cursor:pointer;padding:0;
+  background:none;
+}
+.gradient-controls input[type=color]::-webkit-color-swatch-wrapper{padding:0;}
+.gradient-controls input[type=color]::-webkit-color-swatch{border:2px solid var(--white);border-radius:50%;box-shadow:var(--sh-sm);}
+
 .upload-row{display:flex;gap:8px;align-items:stretch;}
 .upload-row input[type=url]{flex:1;min-width:0;}
 .upload-btn{
@@ -182,36 +197,100 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
   transition:background .2s,transform .15s;white-space:nowrap;flex-shrink:0;
 }
 .upload-btn:hover{background:var(--pastel-pink);}
-.upload-btn:active{transform:scale(.96);}
-.upload-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;
-  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.upload-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
 .upload-btn input[type=file]{display:none;}
-.file-hint{font-size:.7rem;color:var(--muted);font-weight:400;}
 
-.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;
-  padding-top:16px;border-top:1px solid var(--gold-soft);}
 .btn{
-  padding:10px 22px;border-radius:var(--r-sm);border:none;font-family:inherit;
-  font-weight:600;font-size:.88rem;cursor:pointer;display:inline-flex;
-  align-items:center;gap:6px;transition:transform .15s,background .2s,box-shadow .2s;
+  padding:12px 24px;border-radius:var(--r-sm);border:none;font-family:inherit;
+  font-weight:600;font-size:.9rem;cursor:pointer;display:inline-flex;
+  align-items:center;justify-content:center;gap:6px;
+  transition:transform .15s,background .2s,box-shadow .2s;
 }
 .btn:active{transform:scale(.97);}
-.btn-primary{background:var(--gold);color:var(--white);
-  box-shadow:0 4px 14px rgba(232,185,35,.35);}
+.btn-primary{background:var(--gold);color:var(--white);box-shadow:0 4px 14px rgba(232,185,35,.35);}
 .btn-primary:hover{background:#d4a91a;}
 .btn-secondary{background:var(--pastel-blue);color:var(--text);}
 .btn-secondary:hover{background:#c6d6e6;}
 
-.toast{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
-  background:var(--text);color:var(--white);padding:12px 20px;border-radius:999px;
-  font-size:.85rem;font-weight:500;box-shadow:var(--sh-lg);opacity:0;
-  transition:transform .3s var(--ease),opacity .3s;z-index:1000;pointer-events:none;
-  display:flex;align-items:center;gap:8px;max-width:90vw;
+/* ===== Chat ===== */
+.chat-messages{
+  flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;
+  background:linear-gradient(180deg,var(--white) 0%, var(--gold-soft) 100%);
 }
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-.toast svg{width:16px;height:16px;stroke:var(--gold);fill:none;
-  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+.message{
+  display:flex;gap:12px;max-width:85%;
+}
+.message.own{align-self:flex-end;flex-direction:row-reverse;}
+.message-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--pastel-blue);}
+.message-content{
+  background:var(--white);padding:10px 14px;border-radius:var(--r-md);
+  box-shadow:var(--sh-sm);display:flex;flex-direction:column;gap:4px;
+  border:1px solid var(--gold-light);
+}
+.message.own .message-content{background:var(--gold-light);border-color:var(--gold);}
+.message-header{display:flex;justify-content:space-between;gap:10px;font-size:.7rem;color:var(--text-soft);}
+.message-sender{font-weight:600;color:var(--text);}
+.message-text{font-size:.9rem;line-height:1.4;word-break:break-word;}
+.message-image{max-width:100%;border-radius:var(--r-sm);margin-top:4px;cursor:pointer;}
+
+.chat-input-area{
+  padding:16px 20px;background:var(--white);border-top:1px solid var(--gold-light);
+  display:flex;align-items:center;gap:8px;position:sticky;bottom:0;
+}
+.chat-input{
+  flex:1;padding:12px 16px;border:2px solid var(--gold-light);border-radius:999px;
+  font-family:inherit;font-size:.9rem;outline:none;background:var(--gold-soft);
+  transition:border-color .2s;
+}
+.chat-input:focus{border-color:var(--gold);}
+.chat-btn{
+  width:44px;height:44px;border-radius:50%;border:none;background:var(--pastel-blue);
+  cursor:pointer;display:grid;place-items:center;transition:background .2s,transform .15s;
+  flex-shrink:0;
+}
+.chat-btn:hover{background:var(--pastel-pink);}
+.chat-btn:active{transform:scale(.9);}
+.chat-btn svg{width:20px;height:20px;stroke:var(--text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.chat-btn.record{background:#ffe4e4;}
+.chat-btn.record.recording{background:var(--danger);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.05);}100%{transform:scale(1);}}
+.chat-btn.record.recording svg{stroke:white;}
+
+/* Emoji Picker */
+.emoji-picker{
+  position:absolute;bottom:70px;left:20px;background:var(--white);
+  border-radius:var(--r-md);box-shadow:var(--sh-lg);border:1px solid var(--gold-light);
+  width:300px;max-height:250px;overflow-y:auto;display:none;
+  grid-template-columns:repeat(6, 1fr);padding:10px;gap:4px;z-index:20;
+}
+.emoji-picker.show{display:grid;}
+.emoji-btn{
+  background:none;border:none;font-size:1.5rem;cursor:pointer;
+  padding:4px;border-radius:8px;transition:background .2s;
+}
+.emoji-btn:hover{background:var(--gold-soft);}
+
+/* Custom Audio Player */
+.custom-audio-player{
+  display:flex;align-items:center;gap:10px;background:var(--pastel-blue);
+  padding:8px 12px;border-radius:999px;min-width:200px;
+}
+.custom-audio-player .play-btn{
+  width:32px;height:32px;border-radius:50%;background:var(--white);border:none;
+  cursor:pointer;display:grid;place-items:center;box-shadow:var(--sh-sm);flex-shrink:0;
+}
+.custom-audio-player .play-btn svg{width:14px;height:14px;fill:var(--text);}
+.custom-audio-player .progress-track{
+  flex:1;height:6px;background:rgba(255,255,255,0.5);border-radius:3px;
+  cursor:pointer;position:relative;overflow:hidden;
+}
+.custom-audio-player .progress-fill{
+  position:absolute;left:0;top:0;height:100%;background:var(--gold);
+  width:0%;border-radius:3px;transition:width .1s linear;
+}
+.custom-audio-player .time{
+  font-size:.7rem;font-weight:600;color:var(--text);min-width:30px;text-align:right;
+}
 
 @media(max-width:640px){
   .main-content{padding:24px 20px;}
@@ -246,6 +325,12 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
       <svg class="icon" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg>
       <span>Início</span>
     </a>
+    
+    <button class="create-server-btn" id="btn-open-create-server">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Criar Servidor
+    </button>
+
     <a href="#" class="nav-item" data-nav="messages">
       <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <span>Mensagens</span>
@@ -274,79 +359,156 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
   </div>
 </aside>
 
-<div class="modal" id="profile-modal">
-  <div class="modal-content">
-    <button class="close-btn" id="close-modal" aria-label="Fechar">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+<!-- VIEW: EDITAR PERFIL -->
+<div class="view" id="view-profile">
+  <div class="view-header">
+    <button class="back-btn" onclick="closeView('view-profile')">
+      <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <span class="view-title">Editar Perfil</span>
+    <button class="btn btn-primary" id="save-profile-btn" style="padding:8px 16px;font-size:.8rem;">Salvar</button>
+  </div>
+  
+  <form class="form-container" id="profile-form">
+    <div class="form-group">
+      <label>Banner</label>
+      <div class="preview-banner" id="preview-banner">
+        <img id="preview-avatar" class="preview-avatar" alt="Avatar" 
+             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23d9ead3'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%23e8b923'/%3E%3Cpath d='M12 80c4-16 16-24 28-24s24 8 28 24z' fill='%23e8b923'/%3E%3C/svg%3E" />
+      </div>
+      <div class="upload-row" style="margin-top:40px;">
+        <input type="url" id="banner-url" placeholder="URL do Banner" />
+        <label class="upload-btn">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+          <input type="file" id="banner-file" accept="image/*" />
+        </label>
+      </div>
+    </div>
+
+    <div class="gradient-controls">
+      <label>
+        <input type="checkbox" id="gradient-toggle" />
+        Usar Gradiente no Fundo
+      </label>
+      <div style="flex:1;display:flex;gap:8px;justify-content:flex-end;">
+        <input type="color" id="gradient-top" value="#d6e4f0" title="Cor de cima" />
+        <input type="color" id="gradient-bottom" value="#f0d9e8" title="Cor de baixo" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Foto de Perfil</label>
+      <div class="upload-row">
+        <input type="url" id="avatar-url" placeholder="URL da Foto" />
+        <label class="upload-btn">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+          <input type="file" id="avatar-file" accept="image/*" />
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Nick</label>
+      <input type="text" id="nick-input" maxlength="32" placeholder="Seu nick" />
+    </div>
+
+    <div class="form-group">
+      <label>Bio</label>
+      <textarea id="bio-input" maxlength="300" placeholder="Fale sobre você..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Estado</label>
+      <select id="state-input" style="padding:12px;border:2px solid var(--gold-light);border-radius:var(--r-sm);font-family:inherit;font-size:.9rem;outline:none;">
+        <option value="online">Online</option>
+        <option value="offline">Offline</option>
+        <option value="disabled">Desativado</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Status (Recado)</label>
+      <input type="text" id="status-input" maxlength="50" placeholder="Ex.: Bora de call" />
+    </div>
+  </form>
+</div>
+
+<!-- VIEW: CRIAR SERVIDOR -->
+<div class="view" id="view-create-server">
+  <div class="view-header">
+    <button class="back-btn" onclick="closeView('view-create-server')">
+      <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <span class="view-title">Criar Servidor</span>
+  </div>
+  
+  <form class="form-container" id="create-server-form">
+    <div class="form-group">
+      <label>Foto do Servidor</label>
+      <div class="upload-row">
+        <input type="url" id="server-avatar-url" placeholder="URL da Foto" />
+        <label class="upload-btn">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+          <input type="file" id="server-avatar-file" accept="image/*" />
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Nome do Servidor</label>
+      <input type="text" id="server-name" maxlength="50" placeholder="Ex.: Galera do Game" required />
+    </div>
+
+    <div class="form-group">
+      <label>Bio / Descrição</label>
+      <textarea id="server-bio" maxlength="200" placeholder="Do que se trata este servidor?"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="margin-top:16px;">Criar Servidor e Entrar</button>
+  </form>
+</div>
+
+<!-- VIEW: CHAT -->
+<div class="view" id="view-chat">
+  <div class="view-header">
+    <button class="back-btn" onclick="closeView('view-chat')">
+      <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <img id="chat-header-avatar" style="width:32px;height:32px;border-radius:10px;object-fit:cover;background:var(--pastel-blue);" src="" />
+    <div style="display:flex;flex-direction:column;">
+      <span class="view-title" id="chat-header-name" style="font-size:1rem;line-height:1.2;">Chat Geral</span>
+      <span style="font-size:.7rem;color:var(--text-soft);" id="chat-header-bio"></span>
+    </div>
+  </div>
+  
+  <div class="chat-messages" id="chat-messages">
+    <!-- Mensagens vão aqui -->
+  </div>
+
+  <div class="chat-input-area">
+    <div class="emoji-picker" id="emoji-picker"></div>
+    
+    <button class="chat-btn" id="btn-emoji" title="Emojis">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
     </button>
 
-    <div class="preview-banner" id="preview-banner"></div>
-    <div class="preview-avatar-wrap">
-      <img id="preview-avatar" class="preview-avatar" alt="Preview avatar"
-        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23d9ead3'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%23e8b923'/%3E%3Cpath d='M12 80c4-16 16-24 28-24s24 8 28 24z' fill='%23e8b923'/%3E%3C/svg%3E" />
-    </div>
-    <div class="preview-name" id="preview-name">Seu nick</div>
-    <div class="preview-status-text" id="preview-status-text">Seu status aparecerá aqui</div>
+    <label class="chat-btn" style="cursor:pointer;" title="Enviar Imagem">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <input type="file" id="chat-image-upload" accept="image/*" style="display:none;" />
+    </label>
 
-    <form class="profile-form" id="profile-form">
-      <label class="form-label">
-        <span>Banner (URL ou upload)</span>
-        <div class="upload-row">
-          <input type="url" id="banner-url" placeholder="https://exemplo.com/banner.gif" />
-          <label class="upload-btn">
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Upload
-            <input type="file" id="banner-file" accept="image/*" />
-          </label>
-        </div>
-        <span class="file-hint">GIF, PNG, JPG • máx 5MB</span>
-      </label>
+    <button class="chat-btn record" id="btn-record" title="Gravar Áudio">
+      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
 
-      <label class="form-label">
-        <span>Foto (URL ou upload)</span>
-        <div class="upload-row">
-          <input type="url" id="avatar-url" placeholder="https://exemplo.com/foto.gif" />
-          <label class="upload-btn">
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Upload
-            <input type="file" id="avatar-file" accept="image/*" />
-          </label>
-        </div>
-        <span class="file-hint">GIF, PNG, JPG • máx 5MB</span>
-      </label>
-
-      <label class="form-label">
-        <span>Nick</span>
-        <input type="text" id="nick-input" maxlength="32" placeholder="Seu nick" />
-      </label>
-
-      <label class="form-label">
-        <span>Bio</span>
-        <textarea id="bio-input" maxlength="300" placeholder="Fale sobre você..."></textarea>
-      </label>
-
-      <label class="form-label">
-        <span>Estado</span>
-        <select id="state-input">
-          <option value="online">Online</option>
-          <option value="offline">Offline</option>
-          <option value="disabled">Desativado</option>
-        </select>
-      </label>
-
-      <label class="form-label">
-        <span>Status (escrito manualmente)</span>
-        <input type="text" id="status-input" maxlength="50" placeholder="Ex.: Bora de call" />
-      </label>
-
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" id="cancel-btn">Cancelar</button>
-        <button type="submit" class="btn btn-primary">
-          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>
-          Salvar
-        </button>
-      </div>
-    </form>
+    <input type="text" class="chat-input" id="chat-input" placeholder="Digite uma mensagem..." />
+    
+    <button class="chat-btn" id="btn-send" title="Enviar">
+      <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
   </div>
 </div>
 
@@ -358,7 +520,7 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, set, update, get, onValue, onDisconnect, query, orderByChild, endAt, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, update, get, onValue, onDisconnect, query, orderByChild, endAt, remove, push, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBk0TzSvq4T4f27RbCUtHblQxvmkAI0dHE",
@@ -376,57 +538,58 @@ const TTL_OFFLINE_MS = 30 * 60 * 1000;
 const HEARTBEAT_MS   = 60 * 1000;
 
 let currentUser = null;
+let userProfile = {};
 let isSidebarOpen = false;
 let heartbeatInt = null;
 let profileUnsub = null;
 let editBanner = "";
 let editAvatar = "";
 
+let currentServerId = null;
+let chatUnsub = null;
+
+// Media Recorder Variables
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+
 const $ = (id) => document.getElementById(id);
 const sidebar       = $("sidebar");
 const dragHandle    = $("drag-handle");
 const profileCard   = $("profile-card");
-const profileModal  = $("profile-modal");
-const profileForm   = $("profile-form");
-const sidebarAvatar = $("sidebar-avatar");
-const sidebarNick   = $("sidebar-nick");
-const sidebarStatusText = $("sidebar-status-text");
-const sidebarStateDot   = $("sidebar-state-dot");
-const previewBanner = $("preview-banner");
-const previewAvatar = $("preview-avatar");
-const previewName   = $("preview-name");
-const previewStatusText = $("preview-status-text");
-const bannerUrlInput   = $("banner-url");
-const bannerFileInput  = $("banner-file");
-const avatarUrlInput   = $("avatar-url");
-const avatarFileInput  = $("avatar-file");
-const nickInput    = $("nick-input");
-const bioInput     = $("bio-input");
-const stateInput   = $("state-input");
-const statusInput  = $("status-input");
-const toastEl      = $("toast");
-const toastText    = $("toast-text");
-const errBanner    = $("firebase-error-banner");
-const errText      = $("firebase-error-text");
 
-/* ===== Init Firebase com try/catch ===== */
+/* ===== Init Firebase ===== */
 let app, auth, db;
 try {
   app  = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db   = getDatabase(app);
-  console.log("[HEZZ] Firebase inicializado OK");
 } catch (e) {
   console.error("[HEZZ] Falha ao inicializar Firebase:", e);
   showErrorBanner("Falha ao inicializar Firebase: " + e.message);
 }
 
 function showErrorBanner(msg){
-  errText.textContent = msg;
-  errBanner.classList.remove("hidden");
+  $("firebase-error-text").textContent = msg;
+  $("firebase-error-banner").classList.remove("hidden");
 }
 
-/* ===== Sidebar: abrir/fechar + drag ===== */
+/* ===== Navegação e Telas ===== */
+window.closeView = function(viewId) {
+  $(viewId).classList.remove("active");
+  if (viewId === 'view-chat' && chatUnsub) {
+    chatUnsub();
+    chatUnsub = null;
+    currentServerId = null;
+  }
+}
+
+function openView(viewId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $(viewId).classList.add('active');
+}
+
+/* ===== Sidebar Drag Logic ===== */
 function setOffset(px, animate = true) {
   document.documentElement.style.setProperty("--so", `${px}px`);
   if (!animate) {
@@ -441,112 +604,42 @@ function setOpen(open) {
   isSidebarOpen = open;
   setOffset(open ? SIDEBAR_W : 0, true);
 }
-
 let drag = { active:false, startX:0, startOffset:0, moved:false };
-function onDown(e){
+dragHandle.addEventListener("pointerdown", (e) => {
   drag.active = true; drag.moved = false;
   drag.startX = e.clientX;
   drag.startOffset = isSidebarOpen ? SIDEBAR_W : 0;
   setOffset(drag.startOffset, false);
-  if (e.pointerId !== undefined) dragHandle.setPointerCapture(e.pointerId);
+  dragHandle.setPointerCapture(e.pointerId);
   e.preventDefault();
-}
-function onMove(e){
+});
+window.addEventListener("pointermove", (e) => {
   if (!drag.active) return;
   const delta = e.clientX - drag.startX;
   if (Math.abs(delta) > 4) drag.moved = true;
-  const o = Math.max(0, Math.min(SIDEBAR_W, drag.startOffset + delta));
-  setOffset(o, false);
-}
-function onUp(e){
+  setOffset(Math.max(0, Math.min(SIDEBAR_W, drag.startOffset + delta)), false);
+});
+window.addEventListener("pointerup", (e) => {
   if (!drag.active) return;
   drag.active = false;
-  const delta = e.clientX - drag.startX;
   if (!drag.moved) setOpen(!isSidebarOpen);
-  else setOpen(drag.startOffset + delta > SIDEBAR_W / 2);
-}
-dragHandle.addEventListener("pointerdown", onDown);
-window.addEventListener("pointermove", onMove);
-window.addEventListener("pointerup", onUp);
-window.addEventListener("pointercancel", onUp);
-
-profileCard.addEventListener("click", openProfileModal);
-
-/* ===== Modal ===== */
-function openProfileModal(){
-  if (!currentUser) {
-    showToast("Firebase não conectou ainda. Verifique o console.");
-    return;
-  }
-  loadProfileIntoForm();
-  profileModal.classList.add("show");
-}
-function closeProfileModal(){ profileModal.classList.remove("show"); }
-$("close-modal").addEventListener("click", closeProfileModal);
-$("cancel-btn").addEventListener("click", closeProfileModal);
-profileModal.addEventListener("click", (e)=>{ if (e.target === profileModal) closeProfileModal(); });
-
-/* ===== Preview tempo real ===== */
-function applyPreview(){
-  const banner = editBanner || bannerUrlInput.value.trim();
-  const avatar = editAvatar || avatarUrlInput.value.trim();
-
-  if (banner) previewBanner.style.backgroundImage = `url("${banner}")`;
-  else { previewBanner.style.backgroundImage = ""; previewBanner.style.backgroundColor = "var(--pastel-pink)"; }
-
-  if (avatar) previewAvatar.src = avatar;
-  else previewAvatar.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23d9ead3'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%23e8b923'/%3E%3Cpath d='M12 80c4-16 16-24 28-24s24 8 28 24z' fill='%23e8b923'/%3E%3C/svg%3E";
-
-  previewName.textContent = nickInput.value.trim() || "Seu nick";
-  previewStatusText.textContent = statusInput.value.trim() || "Seu status aparecerá aqui";
-}
-bannerUrlInput.addEventListener("input", () => { editBanner = ""; applyPreview(); });
-avatarUrlInput.addEventListener("input", () => { editAvatar = ""; applyPreview(); });
-nickInput.addEventListener("input", applyPreview);
-statusInput.addEventListener("input", applyPreview);
-
-/* ===== Upload base64 ===== */
-function fileToBase64(file){
-  return new Promise((resolve, reject) => {
-    if (file.size > MAX_FILE_SIZE) {
-      reject(new Error(`Arquivo maior que 5MB (${(file.size/1024/1024).toFixed(2)}MB)`));
-      return;
-    }
-    if (file.size > 500 * 1024) console.warn("[HEZZ] Arquivos >500KB em base64 deixam o RTDB lento.");
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
-bannerFileInput.addEventListener("change", async (e) => {
-  const f = e.target.files[0]; if (!f) return;
-  try { editBanner = await fileToBase64(f); bannerUrlInput.value = ""; applyPreview(); showToast("Banner carregado"); }
-  catch (err) { showToast(err.message); }
-});
-avatarFileInput.addEventListener("change", async (e) => {
-  const f = e.target.files[0]; if (!f) return;
-  try { editAvatar = await fileToBase64(f); avatarUrlInput.value = ""; applyPreview(); showToast("Foto carregada"); }
-  catch (err) { showToast(err.message); }
+  else setOpen(drag.startOffset + (e.clientX - drag.startX) > SIDEBAR_W / 2);
 });
 
 /* ===== Toast ===== */
 let toastTimer = null;
 function showToast(msg){
-  toastText.textContent = msg;
-  toastEl.classList.add("show");
+  $("toast-text").textContent = msg;
+  $("toast").classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2500);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2500);
 }
 
-/* ===== Login anônimo ===== */
+/* ===== Login e Auth ===== */
 if (auth) {
-  signInAnonymously(auth)
-    .then((c) => console.log("[HEZZ] Auth anônimo OK:", c.user.uid))
-    .catch((err) => {
-      console.error("[HEZZ] Erro login anônimo:", err);
-      showErrorBanner("Erro no Auth: " + (err.code || err.message) + " — ative 'Anônimo' em Authentication no console.");
-    });
+  signInAnonymously(auth).catch((err) => {
+    showErrorBanner("Erro no Auth: " + (err.code || err.message) + " — ative 'Anônimo' no console.");
+  });
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) return;
@@ -556,10 +649,7 @@ if (auth) {
       startHeartbeat(user.uid);
       setupDisconnect(user.uid);
       subscribeProfile(user.uid);
-      sweepExpired();
-      console.log("[HEZZ] Perfil pronto");
     } catch (err) {
-      console.error("[HEZZ] Erro no perfil:", err);
       showErrorBanner("Erro no banco: " + (err.code || err.message));
     }
   });
@@ -572,21 +662,12 @@ async function ensureUserDoc(uid){
     await set(userRef, {
       uid,
       nick: "Anônimo_" + uid.slice(0,4),
-      bio: "",
-      status: "",
-      state: "online",
-      avatarUrl: "",
-      bannerUrl: "",
-      isAnonymous: true,
-      createdAt: Date.now(),
-      lastSeen: Date.now(),
-      expireAt: Date.now() + TTL_OFFLINE_MS
+      bio: "", status: "", state: "online", avatarUrl: "", bannerUrl: "",
+      gradientEnabled: false, gradientTop: "#d6e4f0", gradientBottom: "#f0d9e8",
+      isAnonymous: true, createdAt: Date.now(), lastSeen: Date.now(), expireAt: Date.now() + TTL_OFFLINE_MS
     });
   } else {
-    await update(userRef, {
-      lastSeen: Date.now(),
-      expireAt: Date.now() + TTL_OFFLINE_MS
-    });
+    await update(userRef, { lastSeen: Date.now(), expireAt: Date.now() + TTL_OFFLINE_MS });
   }
 }
 
@@ -594,15 +675,11 @@ function startHeartbeat(uid){
   if (heartbeatInt) clearInterval(heartbeatInt);
   heartbeatInt = setInterval(() => {
     if (!currentUser) return;
-    update(ref(db, `users/${uid}`), {
-      lastSeen: Date.now(),
-      expireAt: Date.now() + TTL_OFFLINE_MS
-    }).catch(() => {});
+    update(ref(db, `users/${uid}`), { lastSeen: Date.now(), expireAt: Date.now() + TTL_OFFLINE_MS }).catch(() => {});
   }, HEARTBEAT_MS);
 }
 
 function setupDisconnect(uid){
-  // CORRIGIDO: A API modular não permite .child(), então usamos referências diretas
   onDisconnect(ref(db, `users/${uid}/expireAt`)).set(Date.now() + TTL_OFFLINE_MS);
   onDisconnect(ref(db, `users/${uid}/lastSeen`)).set(Date.now());
 }
@@ -610,16 +687,16 @@ function setupDisconnect(uid){
 function subscribeProfile(uid){
   if (profileUnsub) profileUnsub();
   profileUnsub = onValue(ref(db, `users/${uid}`), (snap) => {
-    const d = snap.val();
-    if (d) renderProfile(d);
+    userProfile = snap.val();
+    if (userProfile) renderProfile(userProfile);
   });
 }
 
 function renderProfile(d){
-  sidebarNick.textContent = d.nick || "Anônimo";
-  sidebarStatusText.textContent = d.status || labelState(d.state);
-  if (d.avatarUrl) sidebarAvatar.src = d.avatarUrl;
-  sidebarStateDot.className = "avatar-state " + (d.state || "offline");
+  $("sidebar-nick").textContent = d.nick || "Anônimo";
+  $("sidebar-status-text").textContent = d.status || labelState(d.state);
+  if (d.avatarUrl) $("sidebar-avatar").src = d.avatarUrl;
+  $("sidebar-state-dot").className = "avatar-state " + (d.state || "offline");
 }
 function labelState(s){
   if (s === "online") return "Online";
@@ -627,74 +704,357 @@ function labelState(s){
   return "Offline";
 }
 
-/* ===== Carregar form ===== */
-function loadProfileIntoForm(){
-  get(ref(db, `users/${currentUser.uid}`)).then((snap) => {
-    const d = snap.val() || {};
-    nickInput.value = d.nick || "";
-    bioInput.value = d.bio || "";
-    stateInput.value = d.state || "online";
-    statusInput.value = d.status || "";
-    bannerUrlInput.value = d.bannerUrl && !d.bannerUrl.startsWith("data:") ? d.bannerUrl : "";
-    avatarUrlInput.value = d.avatarUrl && !d.avatarUrl.startsWith("data:") ? d.avatarUrl : "";
-    editBanner = d.bannerUrl && d.bannerUrl.startsWith("data:") ? d.bannerUrl : "";
-    editAvatar = d.avatarUrl && d.avatarUrl.startsWith("data:") ? d.avatarUrl : "";
-    applyPreview();
+/* ===== PERFIL: Lógica de Edição ===== */
+profileCard.addEventListener("click", () => {
+  if (!currentUser) { showToast("Aguarde conectar..."); return; }
+  loadProfileIntoForm();
+  openView('view-profile');
+});
+
+function applyPreview(){
+  const banner = editBanner || $("banner-url").value.trim();
+  const avatar = editAvatar || $("avatar-url").value.trim();
+  const useGrad = $("gradient-toggle").checked;
+  const gTop = $("gradient-top").value;
+  const gBot = $("gradient-bottom").value;
+
+  const pBanner = $("preview-banner");
+  if (useGrad) {
+    pBanner.style.backgroundImage = "none";
+    pBanner.style.background = `linear-gradient(to bottom, ${gTop}, ${gBot})`;
+  } else if (banner) {
+    pBanner.style.backgroundImage = `url("${banner}")`;
+    pBanner.style.background = ""; // reset gradient
+    pBanner.style.backgroundImage = `url("${banner}")`;
+  } else {
+    pBanner.style.backgroundImage = "";
+    pBanner.style.background = "var(--pastel-pink)";
+  }
+
+  if (avatar) $("preview-avatar").src = avatar;
+  else $("preview-avatar").src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23d9ead3'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%23e8b923'/%3E%3Cpath d='M12 80c4-16 16-24 28-24s24 8 28 24z' fill='%23e8b923'/%3E%3C/svg%3E";
+}
+
+['banner-url', 'avatar-url', 'gradient-top', 'gradient-bottom'].forEach(id => {
+  $(id).addEventListener("input", () => { if(id.includes('url')) editBanner = ""; applyPreview(); });
+});
+$("gradient-toggle").addEventListener("change", applyPreview);
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_FILE_SIZE) { reject(new Error("Arquivo > 5MB")); return; }
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
   });
 }
 
-/* ===== Salvar ===== */
-profileForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!currentUser) return;
+$("banner-file").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try { editBanner = await fileToBase64(f); $("banner-url").value = ""; applyPreview(); } catch (err) { showToast(err.message); }
+});
+$("avatar-file").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try { editAvatar = await fileToBase64(f); $("avatar-url").value = ""; applyPreview(); } catch (err) { showToast(err.message); }
+});
 
+function loadProfileIntoForm(){
+  const d = userProfile || {};
+  $("nick-input").value = d.nick || "";
+  $("bio-input").value = d.bio || "";
+  $("state-input").value = d.state || "online";
+  $("status-input").value = d.status || "";
+  $("banner-url").value = d.bannerUrl && !d.bannerUrl.startsWith("data:") ? d.bannerUrl : "";
+  $("avatar-url").value = d.avatarUrl && !d.avatarUrl.startsWith("data:") ? d.avatarUrl : "";
+  editBanner = d.bannerUrl && d.bannerUrl.startsWith("data:") ? d.bannerUrl : "";
+  editAvatar = d.avatarUrl && d.avatarUrl.startsWith("data:") ? d.avatarUrl : "";
+  
+  $("gradient-toggle").checked = d.gradientEnabled || false;
+  $("gradient-top").value = d.gradientTop || "#d6e4f0";
+  $("gradient-bottom").value = d.gradientBottom || "#f0d9e8";
+  
+  applyPreview();
+}
+
+$("save-profile-btn").addEventListener("click", async () => {
+  if (!currentUser) return;
   const payload = {
-    nick: nickInput.value.trim() || "Anônimo",
-    bio: bioInput.value.trim(),
-    state: stateInput.value,
-    status: statusInput.value.trim(),
-    bannerUrl: editBanner || bannerUrlInput.value.trim(),
-    avatarUrl: editAvatar || avatarUrlInput.value.trim(),
+    nick: $("nick-input").value.trim() || "Anônimo",
+    bio: $("bio-input").value.trim(),
+    state: $("state-input").value,
+    status: $("status-input").value.trim(),
+    bannerUrl: editBanner || $("banner-url").value.trim(),
+    avatarUrl: editAvatar || $("avatar-url").value.trim(),
+    gradientEnabled: $("gradient-toggle").checked,
+    gradientTop: $("gradient-top").value,
+    gradientBottom: $("gradient-bottom").value,
     lastSeen: Date.now(),
     expireAt: Date.now() + TTL_OFFLINE_MS
   };
-
   try {
     await update(ref(db, `users/${currentUser.uid}`), payload);
-    closeProfileModal();
     showToast("Perfil salvo!");
+    closeView('view-profile');
+  } catch (err) { showToast("Erro ao salvar: " + err.message); }
+});
+
+/* ===== CRIAR SERVIDOR ===== */
+$("btn-open-create-server").addEventListener("click", () => {
+  if (!currentUser) { showToast("Aguarde conectar..."); return; }
+  openView('view-create-server');
+});
+
+let editServerAvatar = "";
+$("server-avatar-file").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try { editServerAvatar = await fileToBase64(f); $("server-avatar-url").value = ""; } catch (err) { showToast(err.message); }
+});
+
+$("create-server-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!currentUser) return;
+  
+  const name = $("server-name").value.trim();
+  const bio = $("server-bio").value.trim();
+  const avatarUrl = editServerAvatar || $("server-avatar-url").value.trim();
+  
+  const serverRef = push(ref(db, "servers"));
+  const serverId = serverRef.key;
+  
+  try {
+    await set(serverRef, {
+      id: serverId,
+      name: name,
+      bio: bio,
+      avatarUrl: avatarUrl,
+      ownerUid: currentUser.uid,
+      createdAt: Date.now()
+    });
+    
+    // Criar chat geral implícito ao abrir
+    $("create-server-form").reset();
+    editServerAvatar = "";
+    showToast("Servidor criado!");
+    openChat(serverId, name, bio, avatarUrl);
   } catch (err) {
-    console.error(err);
-    showToast("Erro ao salvar: " + (err.code || err.message));
+    showToast("Erro ao criar: " + err.message);
   }
 });
 
-/* ===== Sweeper ===== */
-async function sweepExpired(){
-  try {
-    const cutoff = Date.now() - 60 * 1000;
-    const q = query(ref(db, "users"), orderByChild("expireAt"), endAt(cutoff));
-    const snap = await get(q);
-    if (!snap.exists()) return;
-    const dels = [];
-    snap.forEach((child) => dels.push(remove(ref(db, `users/${child.key}`))));
-    const results = await Promise.allSettled(dels);
-    const ok = results.filter(r => r.status === "fulfilled").length;
-    if (ok > 0) console.log(`[sweeper] ${ok} perfil(is) apagado(s)`);
-  } catch (err) {
-    console.warn("[sweeper]", err.message);
+/* ===== CHAT SYSTEM ===== */
+function openChat(serverId, name, bio, avatarUrl) {
+  currentServerId = serverId;
+  $("chat-header-name").textContent = name;
+  $("chat-header-bio").textContent = bio || "Chat Geral";
+  if(avatarUrl) $("chat-header-avatar").src = avatarUrl;
+  else $("chat-header-avatar").src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23d6e4f0'/%3E%3C/svg%3E";
+  
+  openView('view-chat');
+  
+  const msgsContainer = $("chat-messages");
+  msgsContainer.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.8rem;margin:20px;">Carregando mensagens...</div>';
+  
+  if (chatUnsub) chatUnsub();
+  const chatRef = query(ref(db, `servers/${serverId}/chats/geral`), limitToLast(50));
+  
+  chatUnsub = onValue(chatRef, (snap) => {
+    msgsContainer.innerHTML = "";
+    const msgs = [];
+    snap.forEach((child) => { msgs.push({ id: child.key, ...child.val() }); });
+    
+    if (msgs.length === 0) {
+      msgsContainer.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.8rem;margin:20px;">Nenhuma mensagem ainda. Diga oi!</div>';
+      return;
+    }
+    
+    msgs.forEach(m => renderMessage(m, msgsContainer));
+    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+  });
+}
+
+function renderMessage(m, container) {
+  const isOwn = m.senderUid === currentUser.uid;
+  const msgEl = document.createElement("div");
+  msgEl.className = `message ${isOwn ? 'own' : ''}`;
+  
+  let contentHtml = '';
+  if (m.type === 'text') {
+    contentHtml = `<div class="message-text">${escapeHTML(m.text)}</div>`;
+  } else if (m.type === 'image') {
+    contentHtml = `<img src="${m.imageUrl}" class="message-image" onclick="window.open('${m.imageUrl}', '_blank')" />`;
+  } else if (m.type === 'audio') {
+    contentHtml = createAudioPlayerHTML(m.audioUrl);
+  }
+  
+  const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  msgEl.innerHTML = `
+    <img src="${m.senderAvatar || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 40 40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23d6e4f0\'/%3E%3C/svg%3E'}" class="message-avatar" />
+    <div class="message-content">
+      <div class="message-header">
+        <span class="message-sender">${escapeHTML(m.senderNick)}</span>
+        <span class="message-time">${time}</span>
+      </div>
+      ${contentHtml}
+    </div>
+  `;
+  
+  container.appendChild(msgEl);
+  
+  // Attach audio player events if audio
+  if (m.type === 'audio') {
+    const player = msgEl.querySelector('.custom-audio-player');
+    const audio = player.querySelector('audio');
+    const playBtn = player.querySelector('.play-btn');
+    const progressFill = player.querySelector('.progress-fill');
+    const timeEl = player.querySelector('.time');
+    const track = player.querySelector('.progress-track');
+    
+    playBtn.addEventListener('click', () => {
+      if (audio.paused) { audio.play(); playBtn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; }
+      else { audio.pause(); playBtn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>'; }
+    });
+    
+    audio.addEventListener('timeupdate', () => {
+      const pct = (audio.currentTime / audio.duration) * 100;
+      progressFill.style.width = pct + '%';
+      timeEl.textContent = formatTime(audio.currentTime);
+    });
+    
+    audio.addEventListener('ended', () => {
+      playBtn.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+      progressFill.style.width = '0%';
+      timeEl.textContent = '0:00';
+    });
+    
+    track.addEventListener('click', (e) => {
+      const rect = track.getBoundingClientRect();
+      const pct = (e.clientX - rect.left) / rect.width;
+      audio.currentTime = pct * audio.duration;
+    });
   }
 }
-setInterval(sweepExpired, 5 * 60 * 1000);
 
-/* ===== Nav ===== */
-document.querySelectorAll(".nav-item").forEach((el) => {
-  el.addEventListener("click", (e) => {
-    e.preventDefault();
-    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-    el.classList.add("active");
-  });
+function createAudioPlayerHTML(src) {
+  return `
+    <div class="custom-audio-player">
+      <button class="play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>
+      <div class="progress-track"><div class="progress-fill"></div></div>
+      <span class="time">0:00</span>
+      <audio src="${src}" preload="metadata"></audio>
+    </div>
+  `;
+}
+
+function formatTime(seconds) {
+  if (isNaN(seconds)) return '0:00';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function escapeHTML(str) {
+  return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+}
+
+async function sendMessage(payload) {
+  if (!currentServerId || !currentUser) return;
+  payload.senderUid = currentUser.uid;
+  payload.senderNick = userProfile.nick || "Anônimo";
+  payload.senderAvatar = userProfile.avatarUrl || "";
+  payload.timestamp = Date.now();
+  
+  try {
+    await push(ref(db, `servers/${currentServerId}/chats/geral`), payload);
+  } catch (err) {
+    showToast("Erro ao enviar: " + err.message);
+  }
+}
+
+// Text Send
+$("btn-send").addEventListener("click", () => {
+  const text = $("chat-input").value.trim();
+  if (!text) return;
+  sendMessage({ type: 'text', text });
+  $("chat-input").value = "";
 });
+$("chat-input").addEventListener("keypress", (e) => {
+  if (e.key === 'Enter') $("btn-send").click();
+});
+
+// Image Send
+$("chat-image-upload").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  if (f.size > MAX_FILE_SIZE) { showToast("Imagem muito grande (máx 5MB)"); return; }
+  try {
+    const base64 = await fileToBase64(f);
+    sendMessage({ type: 'image', imageUrl: base64 });
+  } catch (err) { showToast(err.message); }
+  e.target.value = "";
+});
+
+// Emoji Picker
+const emojis = "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😝 😜 🤪 🤨 🧐 🤓 😎 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 😣 😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 🤥 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 🤑 🤠 😈 👿 👹 👺 🤡 💩 👻 💀 👽 👾 🤖 🎃 😺 😸 😹 😻 😼 😽 🙀 😿 😾".split(" ");
+const picker = $("emoji-picker");
+emojis.forEach(e => {
+  const btn = document.createElement("button");
+  btn.className = "emoji-btn";
+  btn.type = "button";
+  btn.textContent = e;
+  btn.onclick = () => {
+    $("chat-input").value += e;
+    $("chat-input").focus();
+  };
+  picker.appendChild(btn);
+});
+
+$("btn-emoji").addEventListener("click", (e) => {
+  e.stopPropagation();
+  picker.classList.toggle("show");
+});
+document.addEventListener("click", (e) => {
+  if (!picker.contains(e.target) && e.target !== $("btn-emoji")) {
+    picker.classList.remove("show");
+  }
+});
+
+// Audio Recording
+$("btn-record").addEventListener("click", async () => {
+  if (isRecording) {
+    mediaRecorder.stop();
+    isRecording = false;
+    $("btn-record").classList.remove("recording");
+    return;
+  }
+  
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Audio = reader.result;
+        sendMessage({ type: 'audio', audioUrl: base64Audio });
+      };
+      reader.readAsDataURL(audioBlob);
+      stream.getTracks().forEach(track => track.stop());
+    };
+    
+    mediaRecorder.start();
+    isRecording = true;
+    $("btn-record").classList.add("recording");
+    showToast("Gravando áudio...");
+  } catch (err) {
+    showToast("Erro ao acessar microfone: " + err.message);
+  }
+});
+
 </script>
 </body>
 </html>
