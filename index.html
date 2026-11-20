@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>HEZZ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -10,9 +10,9 @@
 <style>
 :root{
   --white:#ffffff;
-  --gold:#d4b04a;
-  --gold-light:#f5e6b8;
-  --gold-soft:#faf3dd;
+  --gold:#e8b923;          /* amarelo quase dourado (vivo) */
+  --gold-light:#fdeaa8;
+  --gold-soft:#fffaeb;
   --pastel-blue:#d6e4f0;
   --pastel-pink:#f0d9e8;
   --pastel-green:#d9ead3;
@@ -26,16 +26,13 @@
   --sh-md:0 8px 24px rgba(0,0,0,.08);
   --sh-lg:0 24px 64px rgba(0,0,0,.15);
   --sw:280px;
-  --so:0px; /* 0 = closed / 280 = open */
+  --so:0px;
   --ease:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{
-  font-family:'Inter',system-ui,sans-serif;background:var(--white);color:var(--text);
-  height:100%;overflow:hidden;
-}
+html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
+  color:var(--text);height:100%;overflow:hidden;}
 
-/* ===== Main ===== */
 .main-content{
   position:fixed;inset:0;padding:40px;display:flex;flex-direction:column;gap:14px;
   background:linear-gradient(135deg,var(--pastel-blue) 0%,var(--white) 40%,var(--gold-soft) 100%);
@@ -49,9 +46,10 @@ html,body{
 
 /* ===== Sidebar ===== */
 .sidebar{
-  position:fixed;top:0;left:0;width:var(--sw);height:100vh;background:var(--white);
-  border-right:1px solid var(--gold-light);display:flex;flex-direction:column;
-  padding:24px 16px;z-index:100;box-shadow:var(--sh-md);
+  position:fixed;top:0;left:0;width:var(--sw);height:100vh;height:100dvh;
+  background:var(--white);border-right:1px solid var(--gold-light);
+  display:flex;flex-direction:column;padding:24px 16px;padding-bottom:max(24px,env(safe-area-inset-bottom));
+  z-index:100;box-shadow:var(--sh-md);
   transform:translateX(calc(var(--so) - var(--sw)));
   transition:transform .4s var(--ease);
 }
@@ -60,9 +58,16 @@ html,body{
   display:flex;align-items:center;justify-content:space-between;
   padding:4px 8px 20px;border-bottom:1px solid var(--gold-soft);margin-bottom:12px;
 }
-.logo{font-weight:800;font-size:1.5rem;letter-spacing:3px;color:var(--gold);
-  animation:shimmer 3s ease-in-out infinite;}
-@keyframes shimmer{0%,100%{opacity:1}50%{opacity:.7}}
+.logo{font-weight:800;font-size:1.5rem;letter-spacing:3px;color:var(--gold);}
+
+.error-banner{
+  background:#fde4e4;color:#b04040;padding:10px 12px;border-radius:12px;
+  font-size:.75rem;line-height:1.4;margin-bottom:10px;display:flex;gap:8px;
+  align-items:flex-start;
+}
+.error-banner svg{width:14px;height:14px;flex-shrink:0;margin-top:2px;
+  stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.error-banner.hidden{display:none;}
 
 .sidebar-nav{flex:1;display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
 .nav-item{
@@ -87,6 +92,7 @@ html,body{
   display:flex;align-items:center;gap:12px;padding:10px 12px;
   border-radius:var(--r-md);background:var(--pastel-blue);cursor:pointer;
   margin-top:12px;transition:transform .2s var(--ease),box-shadow .2s;
+  flex-shrink:0;
 }
 .profile-card:hover{transform:translateY(-2px);box-shadow:var(--sh-md);}
 .profile-card:active{transform:scale(.98);}
@@ -103,8 +109,10 @@ html,body{
 .profile-info{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}
 .nick{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .status-text{font-size:.72rem;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.edit-hint{width:14px;height:14px;flex-shrink:0;stroke:var(--text-soft);fill:none;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 
-/* ===== Handle (aba de arrastar) ===== */
+/* ===== Handle (aba do meio) ===== */
 #drag-handle{
   position:fixed;top:50%;left:var(--so);transform:translateY(-50%);
   width:26px;height:70px;background:var(--white);border-radius:0 14px 14px 0;
@@ -116,10 +124,9 @@ html,body{
 #drag-handle.no-trans{transition:background .2s;}
 #drag-handle:active{cursor:grabbing;}
 #drag-handle:hover{background:var(--gold-light);}
-#drag-handle svg{width:14px;height:14px;stroke:var(--gold);fill:none;
-  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;
-  transition:transform .3s var(--ease);}
-#drag-handle.open svg{transform:rotate(180deg);}
+#drag-handle svg{width:16px;height:16px;stroke:var(--gold);fill:none;
+  stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+#drag-handle .dot{fill:var(--gold);stroke:none;}
 
 /* ===== Modal ===== */
 .modal{
@@ -168,12 +175,12 @@ html,body{
 }
 .form-label textarea{resize:vertical;min-height:60px;}
 .upload-row{display:flex;gap:8px;align-items:stretch;}
-.upload-row input[type=url]{flex:1;}
+.upload-row input[type=url]{flex:1;min-width:0;}
 .upload-btn{
   display:inline-flex;align-items:center;gap:6px;padding:10px 14px;
   border-radius:var(--r-sm);background:var(--pastel-blue);color:var(--text);
   font-weight:600;font-size:.8rem;cursor:pointer;
-  transition:background .2s,transform .15s;white-space:nowrap;
+  transition:background .2s,transform .15s;white-space:nowrap;flex-shrink:0;
 }
 .upload-btn:hover{background:var(--pastel-pink);}
 .upload-btn:active{transform:scale(.96);}
@@ -191,29 +198,21 @@ html,body{
 }
 .btn:active{transform:scale(.97);}
 .btn-primary{background:var(--gold);color:var(--white);
-  box-shadow:0 4px 14px rgba(212,176,74,.35);}
-.btn-primary:hover{background:#c9a340;box-shadow:0 6px 20px rgba(212,176,74,.5);}
+  box-shadow:0 4px 14px rgba(232,185,35,.35);}
+.btn-primary:hover{background:#d4a91a;}
 .btn-secondary{background:var(--pastel-blue);color:var(--text);}
 .btn-secondary:hover{background:#c6d6e6;}
 
-/* ===== Toast ===== */
 .toast{
-  position:fixed;bottom:24px;left:50%;
-  transform:translateX(-50%) translateY(80px);
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
   background:var(--text);color:var(--white);padding:12px 20px;border-radius:999px;
   font-size:.85rem;font-weight:500;box-shadow:var(--sh-lg);opacity:0;
   transition:transform .3s var(--ease),opacity .3s;z-index:1000;pointer-events:none;
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:8px;max-width:90vw;
 }
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
 .toast svg{width:16px;height:16px;stroke:var(--gold);fill:none;
-  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
-
-.loading-avatar{
-  background:linear-gradient(90deg,var(--pastel-blue),var(--pastel-pink),var(--pastel-blue));
-  background-size:200% 100%;animation:loading 1.5s ease-in-out infinite;
-}
-@keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
 
 @media(max-width:640px){
   .main-content{padding:24px 20px;}
@@ -225,18 +224,28 @@ html,body{
 
 <main class="main-content">
   <h1>HEZZ</h1>
-  <p>Chat, call e vídeo. Deslize a aba lateral da esquerda para abrir o menu.</p>
+  <p>Chat, call e vídeo. Toque na aba da esquerda pra abrir o menu.</p>
   <p style="font-size:.8rem;color:var(--muted);margin-top:auto;">
     Base inicial • Firebase Realtime Database + Auth anônimo
   </p>
 </main>
 
 <div id="drag-handle" aria-label="Abrir menu">
-  <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+  <svg viewBox="0 0 24 24">
+    <circle class="dot" cx="12" cy="7" r="1.6"/>
+    <circle class="dot" cx="12" cy="12" r="1.6"/>
+    <circle class="dot" cx="12" cy="17" r="1.6"/>
+  </svg>
 </div>
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header"><span class="logo">HEZZ</span></div>
+
+  <div id="firebase-error-banner" class="error-banner hidden">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="firebase-error-text"></span>
+  </div>
+
   <nav class="sidebar-nav">
     <a href="#" class="nav-item active" data-nav="home">
       <svg class="icon" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg>
@@ -255,15 +264,18 @@ html,body{
       <span>Configurações</span>
     </a>
   </nav>
+
   <div class="profile-card" id="profile-card">
     <div class="avatar-wrap">
-      <img id="sidebar-avatar" class="avatar loading-avatar" alt="Avatar" />
+      <img id="sidebar-avatar" class="avatar" alt="Avatar"
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23d6e4f0'/%3E%3Ccircle cx='20' cy='16' r='7' fill='%23e8b923'/%3E%3Cpath d='M6 40c2-8 8-12 14-12s12 4 14 12z' fill='%23e8b923'/%3E%3C/svg%3E" />
       <span id="sidebar-state-dot" class="avatar-state"></span>
     </div>
     <div class="profile-info">
       <span id="sidebar-nick" class="nick">Carregando...</span>
       <span id="sidebar-status-text" class="status-text">Conectando...</span>
     </div>
+    <svg class="edit-hint" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
   </div>
 </aside>
 
@@ -275,7 +287,8 @@ html,body{
 
     <div class="preview-banner" id="preview-banner"></div>
     <div class="preview-avatar-wrap">
-      <img id="preview-avatar" class="preview-avatar" alt="Preview avatar" />
+      <img id="preview-avatar" class="preview-avatar" alt="Preview avatar"
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23d9ead3'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%23e8b923'/%3E%3Cpath d='M12 80c4-16 16-24 28-24s24 8 28 24z' fill='%23e8b923'/%3E%3C/svg%3E" />
     </div>
     <div class="preview-name" id="preview-name">Seu nick</div>
     <div class="preview-status-text" id="preview-status-text">Seu status aparecerá aqui</div>
@@ -355,20 +368,17 @@ import { getDatabase, ref, set, update, get, onValue, onDisconnect, query, order
 const firebaseConfig = {
   apiKey: "AIzaSyBk0TzSvq4T4f27RbCUtHblQxvmkAI0dHE",
   authDomain: "hezz-gg.firebaseapp.com",
+  databaseURL: "https://hezz-gg-default-rtdb.firebaseio.com", // ⬅ ESSENCIAL
   projectId: "hezz-gg",
   storageBucket: "hezz-gg.firebasestorage.app",
   messagingSenderId: "944032998353",
   appId: "1:944032998353:web:e5b079c669c2f6f3a736f0"
 };
 
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getDatabase(app);
-
-const SIDEBAR_W       = 280;
-const MAX_FILE_SIZE   = 5 * 1024 * 1024;
-const TTL_OFFLINE_MS  = 30 * 60 * 1000;
-const HEARTBEAT_MS    = 60 * 1000;
+const SIDEBAR_W      = 280;
+const MAX_FILE_SIZE  = 5 * 1024 * 1024;
+const TTL_OFFLINE_MS = 30 * 60 * 1000;
+const HEARTBEAT_MS   = 60 * 1000;
 
 let currentUser = null;
 let isSidebarOpen = false;
@@ -378,35 +388,50 @@ let editBanner = "";
 let editAvatar = "";
 
 const $ = (id) => document.getElementById(id);
-const sidebar = document.querySelector(".sidebar");
-const dragHandle = $("drag-handle");
-const profileCard = $("profile-card");
-const profileModal = $("profile-modal");
-const profileForm = $("profile-form");
-
+const sidebar       = $("sidebar");
+const dragHandle    = $("drag-handle");
+const profileCard   = $("profile-card");
+const profileModal  = $("profile-modal");
+const profileForm   = $("profile-form");
 const sidebarAvatar = $("sidebar-avatar");
-const sidebarNick = $("sidebar-nick");
+const sidebarNick   = $("sidebar-nick");
 const sidebarStatusText = $("sidebar-status-text");
-const sidebarStateDot = $("sidebar-state-dot");
-
+const sidebarStateDot   = $("sidebar-state-dot");
 const previewBanner = $("preview-banner");
 const previewAvatar = $("preview-avatar");
-const previewName = $("preview-name");
+const previewName   = $("preview-name");
 const previewStatusText = $("preview-status-text");
+const bannerUrlInput   = $("banner-url");
+const bannerFileInput  = $("banner-file");
+const avatarUrlInput   = $("avatar-url");
+const avatarFileInput  = $("avatar-file");
+const nickInput    = $("nick-input");
+const bioInput     = $("bio-input");
+const stateInput   = $("state-input");
+const statusInput  = $("status-input");
+const toastEl      = $("toast");
+const toastText    = $("toast-text");
+const errBanner    = $("firebase-error-banner");
+const errText      = $("firebase-error-text");
 
-const bannerUrlInput = $("banner-url");
-const bannerFileInput = $("banner-file");
-const avatarUrlInput = $("avatar-url");
-const avatarFileInput = $("avatar-file");
-const nickInput = $("nick-input");
-const bioInput = $("bio-input");
-const stateInput = $("state-input");
-const statusInput = $("status-input");
+/* ===== Init Firebase com try/catch ===== */
+let app, auth, db;
+try {
+  app  = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db   = getDatabase(app);
+  console.log("[HEZZ] Firebase inicializado OK");
+} catch (e) {
+  console.error("[HEZZ] Falha ao inicializar Firebase:", e);
+  showErrorBanner("Falha ao inicializar Firebase: " + e.message);
+}
 
-const toastEl = $("toast");
-const toastText = $("toast-text");
+function showErrorBanner(msg){
+  errText.textContent = msg;
+  errBanner.classList.remove("hidden");
+}
 
-/* ========= SIDEBAR: abrir/fechar + drag ========= */
+/* ===== Sidebar: abrir/fechar + drag ===== */
 function setOffset(px, animate = true) {
   document.documentElement.style.setProperty("--so", `${px}px`);
   if (!animate) {
@@ -420,11 +445,9 @@ function setOffset(px, animate = true) {
 function setOpen(open) {
   isSidebarOpen = open;
   setOffset(open ? SIDEBAR_W : 0, true);
-  dragHandle.classList.toggle("open", open);
 }
 
 let drag = { active:false, startX:0, startOffset:0, moved:false };
-
 function onDown(e){
   drag.active = true; drag.moved = false;
   drag.startX = e.clientX;
@@ -447,7 +470,6 @@ function onUp(e){
   if (!drag.moved) setOpen(!isSidebarOpen);
   else setOpen(drag.startOffset + delta > SIDEBAR_W / 2);
 }
-
 dragHandle.addEventListener("pointerdown", onDown);
 window.addEventListener("pointermove", onMove);
 window.addEventListener("pointerup", onUp);
@@ -455,9 +477,12 @@ window.addEventListener("pointercancel", onUp);
 
 profileCard.addEventListener("click", openProfileModal);
 
-/* ========= MODAL ========= */
+/* ===== Modal ===== */
 function openProfileModal(){
-  if (!currentUser) { showToast("Conectando..."); return; }
+  if (!currentUser) {
+    showToast("Firebase não conectou ainda. Verifique o console.");
+    return;
+  }
   loadProfileIntoForm();
   profileModal.classList.add("show");
 }
@@ -466,7 +491,7 @@ $("close-modal").addEventListener("click", closeProfileModal);
 $("cancel-btn").addEventListener("click", closeProfileModal);
 profileModal.addEventListener("click", (e)=>{ if (e.target === profileModal) closeProfileModal(); });
 
-/* ========= PREVIEW TEMPO REAL ========= */
+/* ===== Preview tempo real ===== */
 function applyPreview(){
   const banner = editBanner || bannerUrlInput.value.trim();
   const avatar = editAvatar || avatarUrlInput.value.trim();
@@ -475,7 +500,7 @@ function applyPreview(){
   else { previewBanner.style.backgroundImage = ""; previewBanner.style.backgroundColor = "var(--pastel-pink)"; }
 
   if (avatar) previewAvatar.src = avatar;
-  else { previewAvatar.removeAttribute("src"); previewAvatar.style.background = "var(--pastel-green)"; }
+  else previewAvatar.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23d9ead3'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%23e8b923'/%3E%3Cpath d='M12 80c4-16 16-24 28-24s24 8 28 24z' fill='%23e8b923'/%3E%3C/svg%3E";
 
   previewName.textContent = nickInput.value.trim() || "Seu nick";
   previewStatusText.textContent = statusInput.value.trim() || "Seu status aparecerá aqui";
@@ -485,16 +510,14 @@ avatarUrlInput.addEventListener("input", () => { editAvatar = ""; applyPreview()
 nickInput.addEventListener("input", applyPreview);
 statusInput.addEventListener("input", applyPreview);
 
-/* ========= UPLOAD BASE64 ========= */
+/* ===== Upload base64 ===== */
 function fileToBase64(file){
   return new Promise((resolve, reject) => {
     if (file.size > MAX_FILE_SIZE) {
       reject(new Error(`Arquivo maior que 5MB (${(file.size/1024/1024).toFixed(2)}MB)`));
       return;
     }
-    if (file.size > 500 * 1024) {
-      console.warn("[HEZZ] Arquivos >500KB em base64 deixam o RTDB lento.");
-    }
+    if (file.size > 500 * 1024) console.warn("[HEZZ] Arquivos >500KB em base64 deixam o RTDB lento.");
     const r = new FileReader();
     r.onload = () => resolve(r.result);
     r.onerror = reject;
@@ -512,7 +535,7 @@ avatarFileInput.addEventListener("change", async (e) => {
   catch (err) { showToast(err.message); }
 });
 
-/* ========= TOAST ========= */
+/* ===== Toast ===== */
 let toastTimer = null;
 function showToast(msg){
   toastText.textContent = msg;
@@ -521,21 +544,31 @@ function showToast(msg){
   toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2500);
 }
 
-/* ========= LOGIN ANÔNIMO ========= */
-signInAnonymously(auth).catch((err) => {
-  console.error("Erro login:", err);
-  showToast("Erro ao conectar. Verifique as regras do Firebase.");
-});
+/* ===== Login anônimo ===== */
+if (auth) {
+  signInAnonymously(auth)
+    .then((c) => console.log("[HEZZ] Auth anônimo OK:", c.user.uid))
+    .catch((err) => {
+      console.error("[HEZZ] Erro login anônimo:", err);
+      showErrorBanner("Erro no Auth: " + (err.code || err.message) + " — ative 'Anônimo' em Authentication no console.");
+    });
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-  currentUser = user;
-  await ensureUserDoc(user.uid);
-  startHeartbeat(user.uid);
-  setupDisconnect(user.uid);
-  subscribeProfile(user.uid);
-  sweepExpired();
-});
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    currentUser = user;
+    try {
+      await ensureUserDoc(user.uid);
+      startHeartbeat(user.uid);
+      setupDisconnect(user.uid);
+      subscribeProfile(user.uid);
+      sweepExpired();
+      console.log("[HEZZ] Perfil pronto");
+    } catch (err) {
+      console.error("[HEZZ] Erro no perfil:", err);
+      showErrorBanner("Erro no banco: " + (err.code || err.message));
+    }
+  });
+}
 
 async function ensureUserDoc(uid){
   const userRef = ref(db, `users/${uid}`);
@@ -590,8 +623,7 @@ function subscribeProfile(uid){
 function renderProfile(d){
   sidebarNick.textContent = d.nick || "Anônimo";
   sidebarStatusText.textContent = d.status || labelState(d.state);
-  sidebarAvatar.src = d.avatarUrl || defaultAvatarSvg();
-  sidebarAvatar.classList.remove("loading-avatar");
+  if (d.avatarUrl) sidebarAvatar.src = d.avatarUrl;
   sidebarStateDot.className = "avatar-state " + (d.state || "offline");
 }
 function labelState(s){
@@ -599,16 +631,8 @@ function labelState(s){
   if (s === "disabled") return "Desativado";
   return "Offline";
 }
-function defaultAvatarSvg(){
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-    <rect width="40" height="40" fill="#d6e4f0"/>
-    <circle cx="20" cy="16" r="7" fill="#d4b04a"/>
-    <path d="M6 40c2-8 8-12 14-12s12 4 14 12z" fill="#d4b04a"/>
-  </svg>`;
-  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-}
 
-/* ========= CARREGAR NO FORM ========= */
+/* ===== Carregar form ===== */
 function loadProfileIntoForm(){
   get(ref(db, `users/${currentUser.uid}`)).then((snap) => {
     const d = snap.val() || {};
@@ -624,7 +648,7 @@ function loadProfileIntoForm(){
   });
 }
 
-/* ========= SALVAR ========= */
+/* ===== Salvar ===== */
 profileForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!currentUser) return;
@@ -646,14 +670,13 @@ profileForm.addEventListener("submit", async (e) => {
     showToast("Perfil salvo!");
   } catch (err) {
     console.error(err);
-    showToast("Erro ao salvar: " + (err.message || "verifique as regras"));
+    showToast("Erro ao salvar: " + (err.code || err.message));
   }
 });
 
-/* ========= SWEEPER: apaga docs expirados ========= */
+/* ===== Sweeper ===== */
 async function sweepExpired(){
   try {
-    // margem de 60s pra não matar quem tá com heartbeat atrasado
     const cutoff = Date.now() - 60 * 1000;
     const q = query(ref(db, "users"), orderByChild("expireAt"), endAt(cutoff));
     const snap = await get(q);
@@ -662,14 +685,14 @@ async function sweepExpired(){
     snap.forEach((child) => dels.push(remove(ref(db, `users/${child.key}`))));
     const results = await Promise.allSettled(dels);
     const ok = results.filter(r => r.status === "fulfilled").length;
-    if (ok > 0) console.log(`[sweeper] ${ok} perfil(is) expirado(s) apagado(s)`);
+    if (ok > 0) console.log(`[sweeper] ${ok} perfil(is) apagado(s)`);
   } catch (err) {
     console.warn("[sweeper]", err.message);
   }
 }
 setInterval(sweepExpired, 5 * 60 * 1000);
 
-/* ========= NAV PLACEHOLDER ========= */
+/* ===== Nav ===== */
 document.querySelectorAll(".nav-item").forEach((el) => {
   el.addEventListener("click", (e) => {
     e.preventDefault();
