@@ -42,7 +42,6 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
   background:linear-gradient(135deg,var(--gold) 0%,var(--pastel-pink) 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-.main-content p{color:var(--text-soft);max-width:500px;}
 
 /* ===== Sidebar ===== */
 .sidebar{
@@ -224,10 +223,6 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);
 
 <main class="main-content">
   <h1>HEZZ</h1>
-  <p>Chat, call e vídeo. Toque na aba da esquerda pra abrir o menu.</p>
-  <p style="font-size:.8rem;color:var(--muted);margin-top:auto;">
-    Base inicial • Firebase Realtime Database + Auth anônimo
-  </p>
 </main>
 
 <div id="drag-handle" aria-label="Abrir menu">
@@ -368,7 +363,7 @@ import { getDatabase, ref, set, update, get, onValue, onDisconnect, query, order
 const firebaseConfig = {
   apiKey: "AIzaSyBk0TzSvq4T4f27RbCUtHblQxvmkAI0dHE",
   authDomain: "hezz-gg.firebaseapp.com",
-  databaseURL: "https://hezz-gg-default-rtdb.firebaseio.com", // ⬅ ESSENCIAL
+  databaseURL: "https://hezz-gg-default-rtdb.firebaseio.com",
   projectId: "hezz-gg",
   storageBucket: "hezz-gg.firebasestorage.app",
   messagingSenderId: "944032998353",
@@ -607,9 +602,9 @@ function startHeartbeat(uid){
 }
 
 function setupDisconnect(uid){
-  const userRef = ref(db, `users/${uid}`);
-  onDisconnect(userRef.child("expireAt")).set(Date.now() + TTL_OFFLINE_MS);
-  onDisconnect(userRef.child("lastSeen")).set(Date.now());
+  // CORRIGIDO: A API modular não permite .child(), então usamos referências diretas
+  onDisconnect(ref(db, `users/${uid}/expireAt`)).set(Date.now() + TTL_OFFLINE_MS);
+  onDisconnect(ref(db, `users/${uid}/lastSeen`)).set(Date.now());
 }
 
 function subscribeProfile(uid){
