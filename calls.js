@@ -2,6 +2,13 @@ import { ref, set, update, get, onValue, onDisconnect, query, limitToLast, push,
 import { db, S, $, esc, RTC, isPulse, userStrikes, dmPairId } from "./state.js";
 import { showToast, openView, closeView, closeAllViews, openModal, closeModals } from "./ui.js";
 
+const SVG_VOL_ON = '<svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+const SVG_VOL_OFF = '<svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+const SVG_MIC_ON = '<svg class="ui-icon" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+const SVG_MIC_OFF = '<svg class="ui-icon" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+const SVG_CALL_OUT = '<svg class="ui-icon" style="color:var(--online)" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
+const SVG_CALL_IN = '<svg class="ui-icon" style="color:var(--gold)" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></svg>';
+
 const tiles = {};
 let callsUnsub = null;
 let cinemaUnsub = null;
@@ -23,9 +30,9 @@ function tile(key, label, stream, isLocal){
     t.style.cssText = 'position:relative;background:#000;border-radius:12px;overflow:hidden;min-height:140px;display:grid;place-items:center';
     t.innerHTML = `<video autoplay playsinline style="width:100%;max-height:50vh;object-fit:contain"></video><span style="position:absolute;left:8px;bottom:6px;color:#fff;font-size:.75rem;background:#0008;padding:2px 8px;border-radius:8px">${esc(label)}</span>`;
     if (!isLocal) {
-      const mb = document.createElement('button'); mb.className = 'btn'; mb.textContent = '🔊'; mb.title = 'Silenciar para mim';
-      mb.style.cssText = 'position:absolute;right:6px;top:6px;padding:4px 8px';
-      mb.onclick = () => { const v = t.querySelector('video'); v.muted = !v.muted; mb.textContent = v.muted ? '🔇' : '🔊'; };
+      const mb = document.createElement('button'); mb.className = 'btn'; mb.innerHTML = SVG_VOL_ON; mb.title = 'Silenciar para mim';
+      mb.style.cssText = 'position:absolute;right:6px;top:6px;padding:6px 8px';
+      mb.onclick = () => { const v = t.querySelector('video'); v.muted = !v.muted; mb.innerHTML = v.muted ? SVG_VOL_OFF : SVG_VOL_ON; };
       t.appendChild(mb);
     }
     $('call-grid').appendChild(t); tiles[key] = t;
@@ -190,9 +197,9 @@ function renderCalls(list){
   arr.forEach(c => {
     const item = document.createElement('div');
     item.className = 'call-item';
-    const dir = c.direction === 'out' ? '↗' : '↙';
+    const dirIcon = c.direction === 'out' ? SVG_CALL_OUT : SVG_CALL_IN;
     const date = new Date(c.timestamp).toLocaleString();
-    item.innerHTML = `<div style="font-size:1.2rem;width:24px;text-align:center;">${dir}</div>
+    item.innerHTML = `<div style="width:24px;display:grid;place-items:center;">${dirIcon}</div>
       <div style="flex:1;min-width:0;">
         <div class="list-item-name">${esc(c.peerNick || 'Desconhecido')}</div>
         <div class="list-item-sub">${c.direction === 'out' ? 'Você ligou' : 'Recebida'} • ${date}</div>
@@ -206,8 +213,9 @@ export function initCalls(){
   $('call-mic').onclick = () => {
     const t = S.room?.local.getAudioTracks()[0]; if (!t) return;
     t.enabled = !t.enabled;
-    $('call-mic').textContent = t.enabled ? '🎤 Mic' : '🔇 Mudo';
-    $('cinema-mic-btn').textContent = t.enabled ? '🎤 Mic' : '🔇 Mudo';
+    const html = t.enabled ? `${SVG_MIC_ON} Mic` : `${SVG_MIC_OFF} Mudo`;
+    $('call-mic').innerHTML = html;
+    $('cinema-mic-btn').innerHTML = html;
   };
   $('cinema-mic-btn').onclick = () => $('call-mic').click();
   $('call-cam').onclick = () => S.room && toggleExtra('cam', () => navigator.mediaDevices.getUserMedia({ video: isPulse() ? { width: 1280, height: 720 } : true }));
@@ -263,7 +271,7 @@ export function initCalls(){
     await update(ref(db, `rooms/${rid}/cinema`), { state: cur.state === 'playing' ? 'paused' : 'playing', updatedAt: Date.now() });
     showToast(cur.state === 'playing' ? "Pausado para a sala" : "Reproduzindo para a sala");
   };
-  $("cinema-back-btn").onclick = () => showToast("⏪ -15s sincronizado");
-  $("cinema-fwd-btn").onclick = () => showToast("⏩ +15s sincronizado");
-  $("cinema-seek-btn").onclick = () => { const t = $("cinema-seek-input").value.trim(); if (t) showToast("⏱️ Sincronizado em " + t); };
+  $("cinema-back-btn").onclick = () => showToast("-15s sincronizado");
+  $("cinema-fwd-btn").onclick = () => showToast("+15s sincronizado");
+  $("cinema-seek-btn").onclick = () => { const t = $("cinema-seek-input").value.trim(); if (t) showToast("Sincronizado em " + t); };
 }

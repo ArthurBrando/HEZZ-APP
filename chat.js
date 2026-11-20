@@ -4,6 +4,13 @@ import { showToast, fmt, createAudioPlayerHTML, bindAudioPlayer } from "./ui.js"
 import { joinRoom } from "./calls.js";
 import { openUserProfileModal } from "./profile.js";
 
+const SVG_PHONE = '<svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>';
+const SVG_MAIL = '<svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
+const SVG_CHART = '<svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>';
+const SVG_TAG = '<svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+const SVG_PIN = '<svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
+const SVG_TRASH = '<svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+
 export function myMemberPerms(){
   if (!S.currentServerData || !S.currentUser) return {};
   if (S.currentServerData.ownerUid === S.currentUser.uid) {
@@ -43,7 +50,7 @@ export async function createTicketChannel(ticketId, onSwitchChannel){
   const roleMention = cfg.roleId && S.currentServerData.roles?.[cfg.roleId] ? ` (@${S.currentServerData.roles[cfg.roleId].name})` : '';
   await push(ref(db, `communities/${S.currentServerId}/messages/${chId}`), {
     type: 'text',
-    text: `🎫 Ticket aberto por @${S.userProfile.nick || 'Usuário'}${roleMention}.\nDescreva seu atendimento abaixo.`,
+    text: `Ticket aberto por @${S.userProfile.nick || 'Usuário'}${roleMention}.\nDescreva seu atendimento abaixo.`,
     senderUid: 'hezz_ticket_bot', senderNick: tb.name || 'Hezz Ticket', senderAvatar: tb.avatarUrl || 'foto.png', timestamp: Date.now()
   });
   onSwitchChannel?.(chId);
@@ -65,10 +72,10 @@ export function renderMessage(m, container, ctx = {}){
   if (m.type === 'text') contentHtml = `<div class="message-text">${fmt(m.text || '')}</div>`;
   else if (m.type === 'image') contentHtml = `<img src="${m.imageUrl}" class="message-image" onclick="window.open(this.src,'_blank')" />`;
   else if (m.type === 'audio') contentHtml = createAudioPlayerHTML(m.audioUrl);
-  else if (m.type === 'invite') contentHtml = `<div class="message-text">📞 Convite para call <button class="btn btn-primary" data-room="${esc(m.roomId)}" style="padding:6px 12px;margin-left:6px">Entrar</button></div>`;
+  else if (m.type === 'invite') contentHtml = `<div class="message-text">${SVG_PHONE} Convite para call <button class="btn btn-primary" data-room="${esc(m.roomId)}" style="padding:6px 12px;margin-left:6px">Entrar</button></div>`;
   else if (m.type === 'server_invite') {
     contentHtml = `<div class="ticket-panel">
-      <b>📨 Convite de Servidor</b>
+      <b>${SVG_MAIL} Convite de Servidor</b>
       <span style="font-size:.82rem;">${esc(m.serverName || 'Servidor')} (${ageBadgeLabel(m.serverAge)})</span>
       <button class="mini-btn gold" data-srv-inv="${esc(m.serverId)}">Ver Convite</button>
     </div>`;
@@ -84,11 +91,11 @@ export function renderMessage(m, container, ctx = {}){
         <span>${esc(opt)}</span><span>${cnt} (${pct}%)</span>
       </div>`;
     }).join('');
-    contentHtml = `<div class="poll-card"><b>📊 ${esc(m.question)}</b>${optsHtml}<span style="font-size:.7rem;color:var(--text-soft);">${total} voto(s)</span></div>`;
+    contentHtml = `<div class="poll-card"><b>${SVG_CHART} ${esc(m.question)}</b>${optsHtml}<span style="font-size:.7rem;color:var(--text-soft);">${total} voto(s)</span></div>`;
   }
   else if (m.type === 'ticket_panel') {
     contentHtml = `<div class="ticket-panel">
-      <b>🎫 ${esc(m.title || 'Atendimento')}</b>
+      <b>${SVG_TAG} ${esc(m.title || 'Atendimento')}</b>
       <span style="font-size:.82rem;">${fmt(m.text || '')}</span>
       <button class="mini-btn gold" data-open-ticket="${esc(m.ticketId)}">Abrir Ticket</button>
     </div>`;
@@ -113,14 +120,14 @@ export function renderMessage(m, container, ctx = {}){
     if (isOwn || perms.manageMessages || perms.admin) {
       const acts = document.createElement("div"); acts.className = "msg-actions";
       if (perms.manageMessages || perms.admin) {
-        const pinB = document.createElement("button"); pinB.className = "msg-act-btn"; pinB.textContent = "📌"; pinB.title = "Fixar";
+        const pinB = document.createElement("button"); pinB.className = "msg-act-btn"; pinB.innerHTML = SVG_PIN; pinB.title = "Fixar";
         pinB.onclick = () => {
           set(ref(db, `communities/${S.currentServerId}/pinned/${S.currentChannelId}/${m.id}`), m);
           showToast("Mensagem fixada!");
         };
         acts.appendChild(pinB);
       }
-      const delB = document.createElement("button"); delB.className = "msg-act-btn"; delB.textContent = "🗑️"; delB.title = "Apagar";
+      const delB = document.createElement("button"); delB.className = "msg-act-btn"; delB.innerHTML = SVG_TRASH; delB.title = "Apagar";
       delB.onclick = () => remove(ref(db, `${ctx.path}/${m.id}`));
       acts.appendChild(delB);
       msgEl.appendChild(acts);

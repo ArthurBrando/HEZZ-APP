@@ -2,6 +2,9 @@ import { ref, set, update, get, onValue, onDisconnect, push } from "https://www.
 import { auth, db, S, $, todayKey, TTL_OFFLINE_MS, HEARTBEAT_MS, DEFAULT_AVATAR, DECO_PRESETS, isPulse, maxUploadMB, userStrikes, applyAgeBadge, labelState, fileToBase64 } from "./state.js";
 import { showToast, openView, closeView, openModal, closeModals, refreshEmojiPickers } from "./ui.js";
 
+const SVG_BAN = '<svg class="ui-icon lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>';
+const SVG_LOCK = '<svg class="ui-icon sm" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+
 let heartbeatInt = null;
 let profileUnsub = null;
 let editProfileAvatarData = "";
@@ -80,8 +83,8 @@ function buildDecoPresets(selectedUrl){
     btn.type = "button";
     btn.className = "deco-option" + (selectedUrl === p.url ? " active" : "");
     btn.innerHTML = p.url
-      ? `<img src="${p.url}" alt=""><span>${p.label}${p.pulse && !isPulse() ? ' 🔒' : ''}</span>`
-      : `<span style="height:36px;display:grid;place-items:center;">🚫</span><span>${p.label}</span>`;
+      ? `<img src="${p.url}" alt=""><span>${p.label}${p.pulse && !isPulse() ? ' ' + SVG_LOCK : ''}</span>`
+      : `<span style="height:36px;display:grid;place-items:center;color:var(--text-soft);">${SVG_BAN}</span><span>${p.label}</span>`;
     btn.onclick = () => {
       if (p.pulse && !isPulse()) { showToast("Moldura exclusiva do PULSE!"); return; }
       editProfileDecoData = "";
