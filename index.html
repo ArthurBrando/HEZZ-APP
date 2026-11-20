@@ -163,9 +163,36 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast svg{width:16px;height:16px;stroke:var(--online);fill:none;stroke-width:3;flex-shrink:0;}
 @media(max-width:640px){.main-content{padding:24px 20px;}.main-content h1{font-size:1.8rem;}}
+.typing-bar{min-height:18px;padding:2px 16px;font-size:.72rem;color:var(--text-soft);font-style:italic;}
+.typing-bar .dots span{animation:tb 1.2s infinite;display:inline-block}
+.typing-bar .dots span:nth-child(2){animation-delay:.2s}.typing-bar .dots span:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,60%,100%{opacity:.2}30%{opacity:1}}
+#splash{position:fixed;inset:0;z-index:9999;background:#fff;display:grid;place-items:center;transition:opacity .5s}
+#splash img{width:120px;animation:spin 1.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#login-overlay{position:fixed;inset:0;z-index:9000;background:linear-gradient(135deg,var(--pastel-blue),#fff,var(--gold-soft));display:none;place-items:center;padding:20px}
+#login-overlay .box{width:100%;max-width:360px;background:#fff;border:1px solid var(--gold-light);border-radius:var(--r-lg);box-shadow:var(--sh-lg);padding:24px;display:flex;flex-direction:column;gap:10px}
+#login-overlay input{padding:12px;border:2px solid var(--gold-light);border-radius:10px;font:inherit;outline:none}
+#login-overlay button{padding:12px;border:none;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;background:var(--gold);color:#fff}
+#login-overlay button.alt{background:var(--gold-soft);color:var(--text)}
+.mention{background:var(--gold-soft);color:#a37c00;font-weight:600;border-radius:4px;padding:0 3px}
+.pemoji{width:24px;height:24px;vertical-align:middle}
+.emoji-sec{grid-column:1/-1;font-size:.7rem;font-weight:800;color:var(--gold);padding:4px 2px}
+.emoji-locked{position:relative;opacity:.45}.emoji-locked::after{content:"🔒";position:absolute;right:0;bottom:0;font-size:.8rem}
 </style>
 </head>
 <body>
+<div id="splash"><img src="logobg.png" alt="HEZZ" onerror="this.outerHTML='<b style=&quot;font-size:2rem;color:#e8b923;letter-spacing:4px&quot;>HEZZ</b>'"></div>
+<div id="login-overlay"><div class="box">
+  <h2 style="text-align:center">Entrar no HEZZ</h2>
+  <input id="login-email" type="email" placeholder="E-mail">
+  <input id="login-pass" type="password" placeholder="Senha (mín. 6)">
+  <button id="login-btn">Entrar</button>
+  <button id="signup-btn" class="alt">Criar conta</button>
+  <button id="google-btn" class="alt">Continuar com Google</button>
+  <button id="anon-btn" class="alt">Entrar como anônimo</button>
+  <div id="login-err" style="color:#b04040;font-size:.75rem;text-align:center;min-height:1em"></div>
+</div></div>
 
 <main class="main-content">
   <h1>HEZZ</h1>
@@ -348,6 +375,7 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
     </div>
   </div>
   <div class="chat-messages" id="chat-messages"></div>
+  <div class="typing-bar" id="chat-typing"></div>
   <div class="chat-input-area">
     <div class="emoji-picker" id="emoji-picker"></div>
     <button class="chat-btn" id="btn-emoji" title="Emojis">
@@ -417,6 +445,7 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
     </button>
   </div>
   <div class="chat-messages" id="dm-messages"></div>
+  <div class="typing-bar" id="dm-typing"></div>
   <div class="chat-input-area">
     <div class="emoji-picker" id="dm-emoji-picker"></div>
     <button class="chat-btn" id="dm-btn-emoji" title="Emojis">
@@ -429,6 +458,17 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
   </div>
 </div>
 
+<div class="view" id="view-call" style="background:#1b1b1b;z-index:200">
+  <div id="call-grid" style="flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;padding:12px;align-content:start;overflow-y:auto"></div>
+  <div id="call-invite-list" style="display:none;gap:6px;flex-wrap:wrap;padding:8px 12px;background:#2a2a2a"></div>
+  <div style="display:flex;gap:8px;justify-content:center;padding:14px;background:#111;flex-wrap:wrap">
+    <button class="btn" id="call-mic" style="padding:10px 14px">🎤 Mic</button>
+    <button class="btn" id="call-cam" style="padding:10px 14px">📷 Vídeo</button>
+    <button class="btn" id="call-scr" style="padding:10px 14px">🖥️ Tela</button>
+    <button class="btn" id="call-add" style="padding:10px 14px">➕ Convidar</button>
+    <button class="btn" id="call-leave" style="padding:10px 14px;background:#e26a6a;color:#fff">Sair</button>
+  </div>
+</div>
 <!-- VIEW: CHAMADAS -->
 <div class="view" id="view-calls">
   <div class="view-header">
@@ -505,6 +545,7 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
         </ul>
 
         <button class="btn btn-primary" id="btn-buy-pulse">Quero o PULSE</button>
+        <button class="btn" id="btn-revoke-pulse" style="display:none;background:#fde4e4;color:#b04040;">Revogar assinatura</button>
 
         <div id="pulse-form" style="display:none;flex-direction:column;gap:12px;">
           <img src="Hezz.png" alt="HEZZ" style="height:56px;object-fit:contain;align-self:center;"
@@ -592,8 +633,8 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, set, update, get, onValue, onDisconnect, query, limitToLast, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, update, get, onValue, onDisconnect, query, limitToLast, push, remove, onChildAdded, onChildRemoved } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBk0TzSvq4T4f27RbCUtHblQxvmkAI0dHE",
@@ -715,11 +756,18 @@ document.querySelectorAll('.nav-item').forEach(item => {
 });
 
 if (auth) {
-  signInAnonymously(auth).catch((err) => {
-    showErrorBanner("Erro no Auth: " + (err.code || err.message) + " — ative 'Anônimo' no console.");
-  });
+  const tryAuth = (fn) => async () => { $("login-err").textContent = ""; try { await fn(); } catch (e) { $("login-err").textContent = e.code || e.message; } };
+  const cred = () => [$("login-email").value.trim(), $("login-pass").value];
+  $("login-btn").onclick  = tryAuth(() => signInWithEmailAndPassword(auth, ...cred()));
+  $("signup-btn").onclick = tryAuth(() => createUserWithEmailAndPassword(auth, ...cred()));
+  $("google-btn").onclick = tryAuth(() => signInWithPopup(auth, new GoogleAuthProvider()));
+  $("anon-btn").onclick   = tryAuth(() => signInAnonymously(auth));
+  const t0 = Date.now();
+  const hideSplash = () => setTimeout(() => { const s = $("splash"); s.style.opacity = 0; setTimeout(() => s.remove(), 500); }, Math.max(0, 1500 - (Date.now() - t0)));
   onAuthStateChanged(auth, async (user) => {
-    if (!user) return;
+    hideSplash();
+    $("login-overlay").style.display = user ? "none" : "grid";
+    if (!user) { currentUser = null; return; }
     currentUser = user;
     try {
       await ensureUserDoc(user.uid);
@@ -744,7 +792,7 @@ async function ensureUserDoc(uid){
       uid, nick: "Anônimo_" + uid.slice(0,4), bio: "", status: "", state: "online",
       avatarUrl: "", bannerUrl: "",
       gradientEnabled: false, gradientTop: "#d6e4f0", gradientBottom: "#f0d9e8",
-      isAnonymous: true, plan: "free", pulsePending: false,
+      isAnonymous: !!auth.currentUser?.isAnonymous, plan: "free", pulsePending: false,
       privacy: { friendRequests: "all" },
       createdAt: Date.now(), lastSeen: Date.now(), expireAt: Date.now() + TTL_OFFLINE_MS
     });
@@ -939,17 +987,30 @@ function openCommunityChat(cid, name, bio, avatarUrl) {
     if (msgs.length === 0) { msgsContainer.innerHTML = '<div class="empty">Nenhuma mensagem ainda. Diga oi no chat geral!</div>'; return; }
     msgs.forEach(m => renderMessage(m, msgsContainer));
     msgsContainer.scrollTop = msgsContainer.scrollHeight;
-  });
+  }, (err) => showToast("Chat: " + err.message));
+  watchTyping(`communities/${cid}/typing`, "chat-typing");
 }
 
+function fmt(t){
+  return String(t).split('\n').map(line => {
+    let lvl = 0, s = line;
+    const h = /^(#{1,3})\s+(.*)$/.exec(line);
+    if (h) { lvl = h[1].length; s = h[2]; }
+    s = esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\*(.+?)\*/g,'<i>$1</i>')
+      .replace(/:pulse([1-5]):/g,'<img class="pemoji" src="emoji$1.png" alt="">')
+      .replace(/(^|\s)(@[\wÀ-ú.-]+)/g,'$1<span class="mention">$2</span>');
+    return lvl ? `<div style="font-weight:800;font-size:${[0,1.5,1.25,1.1][lvl]}rem">${s}</div>` : s;
+  }).join('<br>');
+}
 function renderMessage(m, container) {
   const isOwn = m.senderUid === (currentUser ? currentUser.uid : '');
   const msgEl = document.createElement("div");
   msgEl.className = `message ${isOwn ? 'own' : ''}`;
   let contentHtml = '';
-  if (m.type === 'text') contentHtml = `<div class="message-text">${esc(m.text || '')}</div>`;
+  if (m.type === 'text') contentHtml = `<div class="message-text">${fmt(m.text || '')}</div>`;
   else if (m.type === 'image') contentHtml = `<img src="${m.imageUrl}" class="message-image" onclick="window.open(this.src,'_blank')" />`;
   else if (m.type === 'audio') contentHtml = createAudioPlayerHTML(m.audioUrl);
+  else if (m.type === 'invite') contentHtml = `<div class="message-text">📞 Convite para call <button class="btn btn-primary" data-room="${esc(m.roomId)}" style="padding:6px 12px;margin-left:6px">Entrar</button></div>`;
   const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const avatar = m.senderAvatar || DEFAULT_AVATAR;
   msgEl.innerHTML = `
@@ -963,6 +1024,7 @@ function renderMessage(m, container) {
     </div>
   `;
   container.appendChild(msgEl);
+  const rb = msgEl.querySelector('[data-room]'); if (rb) rb.onclick = () => joinRoom(rb.dataset.room);
   if (m.type === 'audio') {
     const player = msgEl.querySelector('.custom-audio-player');
     const audio = player.querySelector('audio');
@@ -1085,7 +1147,7 @@ function makeFriendItem(f){
   return item;
 }
 function renderFriendsLists(){
-  const arr = Object.values(friendsMap).sort((a,b) => (a.nick || '').localeCompare(b.nick || ''));
+  const arr = Object.entries(friendsMap).map(([k,v]) => ({ ...v, uid: v.uid || k })).sort((a,b) => (a.nick || '').localeCompare(b.nick || ''));
   const fEl = $("friends-list");
   const dEl = $("dm-friends-list");
   if (fEl) fEl.innerHTML = "";
@@ -1174,6 +1236,30 @@ async function declineRequest(fromUid){
   catch (err) { showToast("Erro: " + err.message); }
 }
 
+const typingUnsubs = {};
+let typingTimer = null;
+function watchTyping(path, barId){
+  if (typingUnsubs[barId]) typingUnsubs[barId]();
+  const bar = $(barId); bar.innerHTML = "";
+  typingUnsubs[barId] = onValue(ref(db, path), (snap) => {
+    const now = Date.now(), names = [];
+    snap.forEach(c => { const v = c.val(); if (c.key !== currentUser.uid && v && now - v.t < 6000) names.push(v.nick || "Alguém"); });
+    const dots = '<span class="dots"><span>.</span><span>.</span><span>.</span></span>';
+    bar.innerHTML = !names.length ? "" : names.length === 1 ? `<b>${esc(names[0])}</b> digitando${dots}` : `${names.length} pessoas estão digitando${dots}`;
+  });
+}
+function bindTyping(inputId, getPath){
+  $(inputId).addEventListener("input", () => {
+    const p = getPath(); if (!p || !currentUser) return;
+    const r = ref(db, `${p}/${currentUser.uid}`);
+    set(r, { nick: userProfile.nick || "Anônimo", t: Date.now() }).catch(()=>{});
+    onDisconnect(r).remove();
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => set(r, null).catch(()=>{}), 3000);
+  });
+}
+bindTyping("dm-input", () => currentDmUid ? `dms/${dmPairId(currentUser.uid, currentDmUid)}/typing` : null);
+bindTyping("chat-input", () => currentCommunityId ? `communities/${currentCommunityId}/typing` : null);
 function dmPairId(a, b){ return [a, b].sort().join('_'); }
 async function openDm(friendUid){
   if (!currentUser) return;
@@ -1194,7 +1280,11 @@ async function openDm(friendUid){
     if (!msgs.length) { box.innerHTML = '<div class="empty">Nenhuma mensagem ainda. Diga oi!</div>'; return; }
     msgs.forEach(m => renderMessage(m, box));
     box.scrollTop = box.scrollHeight;
+  }, (err) => {
+    box.innerHTML = '<div class="empty">Erro ao carregar DM: ' + esc(err.message) + '</div>';
+    showToast("DM: " + err.message);
   });
+  watchTyping(`dms/${pairId}/typing`, "dm-typing");
 }
 async function sendDm(payload){
   if (!currentDmUid || !currentUser) return;
@@ -1213,12 +1303,108 @@ $("dm-send").addEventListener("click", () => {
   $("dm-input").value = "";
 });
 $("dm-input").addEventListener("keypress", (e) => { if (e.key === 'Enter') $("dm-send").click(); });
-$("dm-call-btn").addEventListener("click", () => {
-  if (!currentDmUid || !currentUser) return;
+$("dm-call-btn").addEventListener("click", async () => {
+  if (!currentDmUid || !currentUser || room) return;
   const f = friendsMap[currentDmUid];
+  const id = push(ref(db, "rooms")).key;
   logCall(currentDmUid, f ? (f.nick || 'Amigo') : 'Amigo');
-  showToast("Chamada registrada no histórico");
+  await sendInviteTo(currentDmUid, id);
+  joinRoom(id);
 });
+
+/* ===== CALLS (WebRTC mesh, sinalização via RTDB) ===== */
+const RTC = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+let room = null; const tiles = {};
+const sendSig = (to, o) => push(ref(db, `rooms/${room.id}/s/${to}`), { from: currentUser.uid, ...o });
+async function sendInviteTo(uid, roomId){
+  await push(ref(db, `dms/${dmPairId(currentUser.uid, uid)}/messages`), { type: 'invite', roomId, text: 'Convite para call',
+    senderUid: currentUser.uid, senderNick: userProfile.nick || 'Anônimo', senderAvatar: userProfile.avatarUrl || '', timestamp: Date.now() });
+}
+function tile(key, label, stream, isLocal, uid){
+  let t = tiles[key];
+  if (!t) {
+    t = document.createElement('div');
+    t.style.cssText = 'position:relative;background:#000;border-radius:12px;overflow:hidden;min-height:140px;display:grid;place-items:center';
+    t.innerHTML = `<video autoplay playsinline style="width:100%;max-height:50vh;object-fit:contain"></video><span style="position:absolute;left:8px;bottom:6px;color:#fff;font-size:.75rem;background:#0008;padding:2px 8px;border-radius:8px">${esc(label)}</span>`;
+    if (!isLocal) {
+      const mb = document.createElement('button'); mb.className = 'btn'; mb.textContent = '🔊'; mb.title = 'Silenciar para mim';
+      mb.style.cssText = 'position:absolute;right:6px;top:6px;padding:4px 8px';
+      mb.onclick = () => { const v = t.querySelector('video'); v.muted = !v.muted; mb.textContent = v.muted ? '🔇' : '🔊'; };
+      t.appendChild(mb);
+    }
+    $('call-grid').appendChild(t); tiles[key] = t;
+  }
+  const v = t.querySelector('video'); if (v.srcObject !== stream) v.srcObject = stream; if (isLocal) v.muted = true;
+}
+const dropTiles = (pfx) => Object.keys(tiles).filter(k => k.startsWith(pfx)).forEach(k => { tiles[k].remove(); delete tiles[k]; });
+function addMine(pc){ room.local.getTracks().forEach(t => pc.addTrack(t, room.local)); room.extra.forEach(s => s.getTracks().forEach(t => pc.addTrack(t, s))); }
+function mkPc(uid, addNow){
+  if (room.pcs[uid]) return room.pcs[uid];
+  const pc = new RTCPeerConnection(RTC); room.pcs[uid] = pc;
+  pc.onicecandidate = e => e.candidate && sendSig(uid, { k: 'ice', d: JSON.stringify(e.candidate) });
+  pc.ontrack = e => { const s = e.streams[0]; if (!s) return; const key = uid + ':' + s.id;
+    tile(key, room.nicks[uid] || 'Amigo', s, false, uid);
+    s.onremovetrack = () => { if (!s.getTracks().length) dropTiles(key); }; };
+  pc.onnegotiationneeded = async () => { if (pc.signalingState !== 'stable') return;
+    try { await pc.setLocalDescription(await pc.createOffer()); sendSig(uid, { k: 'offer', d: JSON.stringify(pc.localDescription) }); } catch (e) {} };
+  if (addNow) addMine(pc);
+  return pc;
+}
+async function onSig(m){
+  try {
+    if (m.k === 'offer') {
+      const first = !room.pcs[m.from]; const pc = mkPc(m.from, false);
+      await pc.setRemoteDescription(JSON.parse(m.d));
+      if (first) addMine(pc);
+      await pc.setLocalDescription(await pc.createAnswer());
+      sendSig(m.from, { k: 'answer', d: JSON.stringify(pc.localDescription) });
+    } else if (m.k === 'answer') await room.pcs[m.from]?.setRemoteDescription(JSON.parse(m.d));
+    else if (m.k === 'ice') await room.pcs[m.from]?.addIceCandidate(JSON.parse(m.d));
+  } catch (e) { console.warn('sig', e); }
+}
+async function joinRoom(id){
+  if (room) return showToast('Você já está em uma call');
+  let local;
+  try { local = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return showToast('Sem acesso ao microfone'); }
+  room = { id, pcs: {}, local, extra: [], nicks: {}, unsubs: [], cam: null, scr: null };
+  openView('view-call'); $('call-grid').innerHTML = ''; tile('me:v', 'Você', local, true);
+  const me = currentUser.uid, pr = ref(db, `rooms/${id}/p/${me}`);
+  const existing = (await get(ref(db, `rooms/${id}/p`))).val() || {};
+  await set(pr, { nick: userProfile.nick || 'Anônimo', t: Date.now() }); onDisconnect(pr).remove();
+  Object.entries(existing).forEach(([u, v]) => { room.nicks[u] = v.nick; if (u !== me) mkPc(u, true); });
+  room.unsubs.push(onChildAdded(ref(db, `rooms/${id}/p`), s => { room.nicks[s.key] = (s.val() || {}).nick; }));
+  room.unsubs.push(onChildAdded(ref(db, `rooms/${id}/s/${me}`), s => { const m = s.val(); remove(s.ref); onSig(m); }));
+  room.unsubs.push(onChildRemoved(ref(db, `rooms/${id}/p`), s => { room.pcs[s.key]?.close(); delete room.pcs[s.key]; dropTiles(s.key + ':'); }));
+}
+async function toggleExtra(key, getStream){
+  if (room[key]) {
+    const s = room[key];
+    s.getTracks().forEach(t => { t.stop(); Object.values(room.pcs).forEach(pc => { const sn = pc.getSenders().find(x => x.track === t); if (sn) pc.removeTrack(sn); }); });
+    room.extra = room.extra.filter(x => x !== s); room[key] = null; dropTiles('me:' + key); return;
+  }
+  try {
+    const s = await getStream(); room[key] = s; room.extra.push(s);
+    s.getVideoTracks()[0].onended = () => { if (room && room[key] === s) toggleExtra(key, getStream); };
+    Object.values(room.pcs).forEach(pc => s.getTracks().forEach(t => pc.addTrack(t, s)));
+    tile('me:' + key, key === 'cam' ? 'Você (vídeo)' : 'Você (tela)', s, true);
+  } catch (e) { showToast('Não foi possível iniciar'); }
+}
+$('call-mic').onclick = () => { const t = room?.local.getAudioTracks()[0]; if (!t) return; t.enabled = !t.enabled; $('call-mic').textContent = t.enabled ? '🎤 Mic' : '🔇 Mudo'; };
+$('call-cam').onclick = () => room && toggleExtra('cam', () => navigator.mediaDevices.getUserMedia({ video: true }));
+$('call-scr').onclick = () => room && toggleExtra('scr', () => navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }));
+$('call-add').onclick = () => {
+  const box = $('call-invite-list'); box.innerHTML = '';
+  Object.entries(friendsMap).forEach(([k, f]) => { const b = document.createElement('button'); b.className = 'btn'; b.textContent = f.nick || 'Amigo';
+    b.onclick = async () => { await sendInviteTo(f.uid || k, room.id); showToast('Convite enviado para ' + (f.nick || 'amigo')); }; box.appendChild(b); });
+  box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+};
+$('call-leave').onclick = () => {
+  if (!room) return;
+  room.unsubs.forEach(u => u()); Object.values(room.pcs).forEach(pc => pc.close());
+  [room.local, room.cam, room.scr].forEach(s => s && s.getTracks().forEach(t => t.stop()));
+  remove(ref(db, `rooms/${room.id}/p/${currentUser.uid}`)).catch(() => {});
+  Object.keys(tiles).forEach(k => delete tiles[k]); room = null; closeAllViews();
+};
 
 function subscribeCalls(uid){
   if (callsUnsub) callsUnsub();
@@ -1296,7 +1482,23 @@ function renderPlanState(){
     btn.textContent = userProfile.pulsePending ? "Pedido em análise..." : "Quero o PULSE";
   }
   if (pulse) $("pulse-form").style.display = 'none';
+  const rv = $("btn-revoke-pulse");
+  if (rv) {
+    rv.style.display = pulse ? 'inline-flex' : 'none';
+    rv.disabled = !!userProfile.revokePending;
+    rv.textContent = userProfile.revokePending ? "Revogação em análise..." : "Revogar assinatura";
+  }
 }
+$("btn-revoke-pulse").addEventListener("click", async () => {
+  if (!currentUser || !isPulse() || userProfile.revokePending) return;
+  if (!confirm("Pedir a revogação da sua assinatura PULSE?")) return;
+  try {
+    await push(ref(db, "pulse_requests"), { uid: currentUser.uid, nick: userProfile.nick || "Anônimo",
+      type: "revoke", plan: "pulse", status: "pending", createdAt: Date.now() });
+    await update(ref(db, `users/${currentUser.uid}`), { revokePending: true });
+    showToast("Pedido de revogação enviado");
+  } catch (err) { showToast("Erro: " + err.message); }
+});
 $("btn-buy-pulse").addEventListener("click", () => {
   const form = $("pulse-form");
   form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
@@ -1372,6 +1574,14 @@ function buildEmojiPicker(pickerEl, inputEl){
     btn.onclick = () => { inputEl.value += e; inputEl.focus(); };
     pickerEl.appendChild(btn);
   });
+  const sec = document.createElement("div"); sec.className = "emoji-sec"; sec.textContent = "PULSE"; pickerEl.appendChild(sec);
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "emoji-btn" + (isPulse() ? "" : " emoji-locked");
+    b.innerHTML = `<img class="pemoji" src="emoji${i}.png" alt="">`;
+    b.onclick = () => { if (!isPulse()) { showToast("Emojis exclusivos para assinantes PULSE"); return; } inputEl.value += `:pulse${i}:`; inputEl.focus(); };
+    pickerEl.appendChild(b);
+  }
 }
 buildEmojiPicker($("emoji-picker"), $("chat-input"));
 buildEmojiPicker($("dm-emoji-picker"), $("dm-input"));
