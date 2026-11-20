@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>HEZZ</title>
+<link rel="icon" href="foto.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,7 +12,9 @@
 </head>
 <body>
 <div id="splash"><img src="logobg.png" alt="HEZZ" onerror="this.outerHTML='<b style=&quot;font-size:2rem;color:#e8b923;letter-spacing:4px&quot;>HEZZ</b>'"></div>
+
 <div id="login-overlay"><div class="box">
+  <img src="foto.png" alt="HEZZ" style="width:56px;height:56px;border-radius:14px;align-self:center;object-fit:cover;" onerror="this.style.display='none'">
   <h2 style="text-align:center">Entrar no HEZZ</h2>
   <input id="login-email" type="email" placeholder="E-mail">
   <input id="login-pass" type="password" placeholder="Senha (mín. 6)">
@@ -22,10 +25,42 @@
   <div id="login-err" style="color:#b04040;font-size:.75rem;text-align:center;min-height:1em"></div>
 </div></div>
 
+<!-- TELA CONTA BANIDA (STRIKE 3) -->
+<div id="banned-overlay">
+  <div class="box">
+    <img src="foto.png" alt="HEZZ" style="width:56px;height:56px;border-radius:14px;align-self:center;" onerror="this.style.display='none'">
+    <h2>Conta Banida</h2>
+    <p style="font-size:.86rem;color:var(--text-soft);text-align:center;line-height:1.45;">
+      Sua conta atingiu o nível 3 de moderação e foi banida permanentemente da plataforma HEZZ.
+      Dúvidas: <b>supporthezzapp@gmail.com</b>
+    </p>
+    <button id="banned-logout-btn">Sair da conta</button>
+  </div>
+</div>
+
 <main class="main-content">
-  <h1>HEZZ</h1>
-  <p style="color:var(--text-soft);font-size:.9rem;font-weight:600;">Suas comunidades</p>
-  <div id="home-communities" style="display:flex;flex-direction:column;gap:10px;max-width:520px;width:100%;"></div>
+  <div class="home-header">
+    <h1>HEZZ</h1>
+    <button class="btn btn-secondary" id="btn-join-invite" style="padding:10px 14px;font-size:.8rem;">Entrar por Convite</button>
+  </div>
+  <p style="color:var(--text-soft);font-size:.9rem;font-weight:600;">Seus servidores</p>
+  <div id="home-communities" class="home-list"></div>
+
+  <div class="discover-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+      <p style="color:var(--text);font-size:1rem;font-weight:700;">Descobrir Novos Servidores</p>
+    </div>
+    <div id="discover-restricted" class="error-banner hidden">
+      <span>Seu acesso à pesquisa de servidores foi suspenso (Alerta Nível 2).</span>
+    </div>
+    <div class="search-bar" id="discover-search-wrap">
+      <input type="text" id="discover-search" placeholder="Pesquisar servidores por nome ou descrição..." />
+      <button id="discover-btn" title="Pesquisar">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+    </div>
+    <div id="discover-list" class="home-list"></div>
+  </div>
 </main>
 
 <div id="drag-handle" aria-label="Abrir menu">
@@ -37,7 +72,12 @@
 </div>
 
 <aside class="sidebar" id="sidebar">
-  <div class="sidebar-header"><span class="logo">HEZZ</span></div>
+  <div class="sidebar-header">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <img src="foto.png" alt="" style="width:26px;height:26px;border-radius:7px;object-fit:cover;" onerror="this.style.display='none'">
+      <span class="logo">HEZZ</span>
+    </div>
+  </div>
 
   <div id="firebase-error-banner" class="error-banner hidden">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -51,7 +91,7 @@
     </a>
     <button class="create-server-btn" id="btn-open-create-community">
       <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Criar Comunidade
+      Criar Servidor
     </button>
     <a href="#" class="nav-item" data-nav="messages">
       <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -72,8 +112,9 @@
   </nav>
 
   <div class="profile-card" id="profile-card">
-    <div class="avatar-wrap">
-      <img id="sidebar-avatar" class="avatar" alt="Avatar"
+    <div class="avatar-wrap avatar-deco-wrap">
+      <img id="sidebar-avatar-deco" class="avatar-deco" src="" style="display:none;" alt="" />
+      <img id="sidebar-avatar" class="avatar round" alt="Avatar"
         src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23d6e4f0'/%3E%3Ccircle cx='20' cy='16' r='7' fill='%23e8b923'/%3E%3Cpath d='M6 40c2-8 8-12 14-12s12 4 14 12z' fill='%23e8b923'/%3E%3C/svg%3E" />
       <span id="sidebar-state-dot" class="avatar-state"></span>
     </div>
@@ -99,16 +140,23 @@
   </div>
 
   <form class="form-container" id="profile-form">
-    <div class="hint"><b>Plano Free:</b> foto e banner <b>apenas via URL</b>. Upload direto (inclusive GIF animado) é exclusivo do <b>PULSE</b>.</div>
+    <div class="hint"><b>Plano Free:</b> foto, banner e moldura via URL. Upload direto (e molduras exclusivas como <b>natal.png</b>) são do <b>PULSE</b>. Limite: <b>5 trocas de foto por dia</b>.</div>
 
     <div class="form-group">
-      <label>Banner (URL)</label>
+      <label>Banner e Preview</label>
       <div class="preview-banner" id="preview-banner">
-        <img id="preview-avatar" class="preview-avatar" alt="Avatar"
-             src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23d9ead3'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%23e8b923'/%3E%3Cpath d='M12 80c4-16 16-24 28-24s24 8 28 24z' fill='%23e8b923'/%3E%3C/svg%3E" />
+        <div class="preview-avatar-box">
+          <img id="preview-avatar-deco" class="avatar-deco preview-deco" src="" style="display:none;" alt="" />
+          <img id="preview-avatar" class="preview-avatar round" alt="Avatar"
+               src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23d9ead3'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%23e8b923'/%3E%3Cpath d='M12 80c4-16 16-24 28-24s24 8 28 24z' fill='%23e8b923'/%3E%3C/svg%3E" />
+        </div>
       </div>
-      <div class="upload-row" style="margin-top:40px;">
-        <input type="url" id="banner-url" placeholder="https://.../banner.gif" />
+      <div class="upload-row" style="margin-top:44px;">
+        <input type="url" id="banner-url" placeholder="URL do Banner (https://.../banner.gif)" />
+        <label class="upload-btn">
+          Upload
+          <input type="file" id="banner-file" accept="image/*" />
+        </label>
       </div>
     </div>
 
@@ -121,9 +169,25 @@
     </div>
 
     <div class="form-group">
-      <label>Foto de Perfil (URL)</label>
+      <label>Foto de Perfil</label>
       <div class="upload-row">
-        <input type="url" id="avatar-url" placeholder="https://.../foto.gif" />
+        <input type="url" id="avatar-url" placeholder="URL da Foto (https://.../foto.gif)" />
+        <label class="upload-btn">
+          Upload
+          <input type="file" id="avatar-file" accept="image/*" />
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Decoração de Avatar (Moldura atrás da foto)</label>
+      <div id="deco-presets" class="deco-grid"></div>
+      <div class="upload-row">
+        <input type="url" id="deco-url" placeholder="URL da moldura (disponível no Free)" />
+        <label class="upload-btn">
+          Upload
+          <input type="file" id="deco-file" accept="image/*" />
+        </label>
       </div>
     </div>
 
@@ -135,6 +199,15 @@
     <div class="form-group">
       <label>Bio</label>
       <textarea id="bio-input" maxlength="300" placeholder="Fale sobre você..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Faixa Etária (Segurança)</label>
+      <select id="age-input">
+        <option value="under16">Menor de 16</option>
+        <option value="16+">16+</option>
+        <option value="18+">18+</option>
+      </select>
     </div>
 
     <div class="form-group">
@@ -153,22 +226,21 @@
   </form>
 </div>
 
-<!-- VIEW: CRIAR COMUNIDADE -->
+<!-- VIEW: CRIAR SERVIDOR -->
 <div class="view" id="view-create-community">
   <div class="view-header">
     <button class="back-btn" onclick="closeView('view-create-community')">
       <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <span class="view-title">Criar Comunidade</span>
+    <span class="view-title">Criar Servidor</span>
   </div>
 
   <form class="form-container" id="create-community-form">
     <div class="form-group">
-      <label>Foto da Comunidade</label>
+      <label>Foto do Servidor</label>
       <div class="upload-row">
         <input type="url" id="community-avatar-url" placeholder="URL da Foto" />
         <label class="upload-btn">
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Upload
           <input type="file" id="community-avatar-file" accept="image/*" />
         </label>
@@ -177,49 +249,199 @@
     </div>
 
     <div class="form-group">
-      <label>Nome da Comunidade</label>
+      <label>Nome do Servidor</label>
       <input type="text" id="community-name" maxlength="50" placeholder="Ex.: Galera do Game" required />
     </div>
 
     <div class="form-group">
-      <label>Bio / Descrição</label>
-      <textarea id="community-bio" maxlength="200" placeholder="Do que se trata esta comunidade?"></textarea>
+      <label>Descrição / Bio</label>
+      <textarea id="community-bio" maxlength="200" placeholder="Do que se trata este servidor?"></textarea>
     </div>
 
-    <button type="submit" class="btn btn-primary" style="margin-top:16px;">Criar Comunidade e Entrar</button>
+    <div class="form-group">
+      <label>Classificação Etária do Servidor</label>
+      <select id="community-age">
+        <option value="all">Livre (Todas as idades)</option>
+        <option value="16+">16+ (Apenas maiores de 16)</option>
+        <option value="18+">18+ (Apenas maiores de 18)</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="community-invite-wrap">
+      <label>Link de Convite Personalizado (Exclusivo PULSE)</label>
+      <input type="text" id="community-invite-input" maxlength="24" placeholder="Ex.: meuservidor (vazio = código aleatório)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="margin-top:8px;">Criar Servidor e Entrar</button>
   </form>
 </div>
 
-<!-- VIEW: CHAT DA COMUNIDADE -->
-<div class="view" id="view-chat">
+<!-- VIEW: SERVIDOR ESTILO DISCORD -->
+<div class="view" id="view-server">
   <div class="view-header">
-    <button class="back-btn" onclick="closeView('view-chat')">
+    <button class="back-btn" onclick="closeView('view-server')">
       <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <img id="chat-header-avatar" style="width:32px;height:32px;border-radius:10px;object-fit:cover;background:var(--pastel-blue);" src="" />
-    <div style="display:flex;flex-direction:column;min-width:0;">
-      <span class="view-title" id="chat-header-name" style="font-size:1rem;line-height:1.2;">Chat Geral</span>
-      <span style="font-size:.7rem;color:var(--text-soft);" id="chat-header-bio">Chat Geral</span>
+    <button class="back-btn" id="server-drawer-toggle" title="Canais">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <img id="server-header-avatar" style="width:32px;height:32px;border-radius:10px;object-fit:cover;background:var(--pastel-blue);" src="" />
+    <div style="display:flex;flex-direction:column;min-width:0;flex:1;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="view-title" id="server-header-name" style="font-size:1rem;line-height:1.2;">Servidor</span>
+        <span id="server-header-age" class="age-badge"></span>
+      </div>
+      <span id="server-chan-title" style="font-size:.72rem;color:var(--text-soft);"># geral</span>
+    </div>
+    <button class="mini-btn gold" id="server-btn-invite" title="Convidar amigos">Convidar</button>
+    <button class="back-btn" id="server-pinned-btn" title="Mensagens Fixadas">📌</button>
+    <button class="back-btn" id="server-btn-members" title="Membros">👥</button>
+    <button class="back-btn" id="server-btn-settings" title="Configurações do Servidor">⚙️</button>
+  </div>
+
+  <div class="server-layout">
+    <aside class="server-drawer" id="server-channels-drawer">
+      <div class="drawer-actions">
+        <button class="mini-btn accept" id="server-btn-add-cat">+ Categoria</button>
+        <button class="mini-btn gold" id="server-btn-add-chan">+ Canal</button>
+      </div>
+      <div id="server-categories-list" class="categories-list"></div>
+    </aside>
+
+    <div class="server-main">
+      <div class="channel-rules-bar" id="server-chan-rules-bar">
+        <span id="server-chan-rules"></span>
+        <button class="mini-btn decline" id="server-ticket-close-btn" style="display:none;">🔒 Fechar Ticket</button>
+      </div>
+      <div class="chat-messages" id="server-chat-messages"></div>
+      <div class="typing-bar" id="server-typing"></div>
+      <div class="chat-input-area" style="position:relative;">
+        <div class="autocomplete-popup" id="server-mention-popup"></div>
+        <div class="autocomplete-popup" id="server-slash-popup"></div>
+        <div class="tools-menu" id="server-tools-menu">
+          <button type="button" id="tool-poll">📊 Criar Enquete</button>
+          <button type="button" id="tool-cinema">🎬 Sala Privada / Cinema</button>
+          <button type="button" id="tool-invite-friends">📨 Convidar Amigo</button>
+        </div>
+        <div class="emoji-picker" id="server-emoji-picker"></div>
+        <button class="chat-btn" id="server-btn-tools" title="Ferramentas">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </button>
+        <button class="chat-btn" id="server-btn-emoji" title="Emojis">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        </button>
+        <label class="chat-btn" style="cursor:pointer;" title="Enviar Imagem">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <input type="file" id="server-image-upload" accept="image/*" style="display:none;" />
+        </label>
+        <button class="chat-btn record" id="server-btn-record" title="Gravar Áudio">
+          <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <input type="text" class="chat-input" id="server-chat-input" placeholder="Digite no canal (use @ para mencionar, / para comandos)..." />
+        <button class="chat-btn" id="server-btn-send" title="Enviar">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
     </div>
   </div>
-  <div class="chat-messages" id="chat-messages"></div>
-  <div class="typing-bar" id="chat-typing"></div>
-  <div class="chat-input-area">
-    <div class="emoji-picker" id="emoji-picker"></div>
-    <button class="chat-btn" id="btn-emoji" title="Emojis">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+</div>
+
+<!-- VIEW: CONFIGURAÇÕES DO SERVIDOR -->
+<div class="view" id="view-server-settings">
+  <div class="view-header">
+    <button class="back-btn" onclick="closeView('view-server-settings')">
+      <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <label class="chat-btn" style="cursor:pointer;" title="Enviar Imagem">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-      <input type="file" id="chat-image-upload" accept="image/*" style="display:none;" />
-    </label>
-    <button class="chat-btn record" id="btn-record" title="Gravar Áudio">
-      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-    </button>
-    <input type="text" class="chat-input" id="chat-input" placeholder="Digite uma mensagem..." />
-    <button class="chat-btn" id="btn-send" title="Enviar">
-      <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-    </button>
+    <span class="view-title">Configurações do Servidor</span>
+  </div>
+  <div class="tabs" id="srv-settings-tabs">
+    <button class="tab active" data-sub="srv-general">Geral</button>
+    <button class="tab" data-sub="srv-members">Membros</button>
+    <button class="tab" data-sub="srv-roles">Cargos</button>
+    <button class="tab" data-sub="srv-ticketbot">Bot de Tickets</button>
+  </div>
+  <div class="settings-body">
+    <div class="subview active" id="sub-srv-general">
+      <div class="card">
+        <div class="form-group">
+          <label>Nome do Servidor</label>
+          <input type="text" id="srv-name" maxlength="50" />
+        </div>
+        <div class="form-group">
+          <label>Foto do Servidor (máx 5 trocas/dia)</label>
+          <div class="upload-row">
+            <input type="url" id="srv-avatar-url" placeholder="URL da foto" />
+            <label class="upload-btn">Upload<input type="file" id="srv-avatar-file" accept="image/*" /></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Classificação Etária</label>
+          <select id="srv-age">
+            <option value="all">Livre</option>
+            <option value="16+">16+</option>
+            <option value="18+">18+</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Atraso de Mensagem (Slowmode)</label>
+          <select id="srv-slowmode">
+            <option value="0">Sem limite</option>
+            <option value="5">5 segundos</option>
+            <option value="10">10 segundos</option>
+            <option value="30">30 segundos</option>
+            <option value="60">60 segundos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Código de Convite (PULSE escolhe personalizado)</label>
+          <input type="text" id="srv-invite-code" maxlength="24" />
+        </div>
+        <button class="btn btn-primary" id="srv-save-general">Salvar Configurações</button>
+      </div>
+    </div>
+
+    <div class="subview" id="sub-srv-members">
+      <div class="card">
+        <h3>Membros do Servidor</h3>
+        <div id="srv-members-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+
+    <div class="subview" id="sub-srv-roles">
+      <div class="card">
+        <h3>Criar Cargo</h3>
+        <div class="row">
+          <input type="text" id="srv-role-name" placeholder="Nome do cargo" maxlength="24" />
+          <input type="color" id="srv-role-color" value="#e8b923" style="width:42px;height:40px;padding:2px;" />
+          <button class="mini-btn gold" id="srv-role-create-btn">Criar</button>
+        </div>
+        <h3 style="margin-top:8px;">Cargos Existentes</h3>
+        <div id="srv-roles-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+
+    <div class="subview" id="sub-srv-ticketbot">
+      <div class="card">
+        <h3>Personalizar Bot de Tickets neste Servidor</h3>
+        <div class="hint">Admins podem usar <b>/setup</b> no chat do servidor para criar/apagar tickets e <b>/send-iddoticket</b> para enviar o painel!</div>
+        <div class="form-group">
+          <label>Nome do Bot de Tickets</label>
+          <input type="text" id="srv-bot-name" maxlength="32" />
+        </div>
+        <div class="form-group">
+          <label>Foto do Bot de Tickets</label>
+          <div class="upload-row">
+            <input type="url" id="srv-bot-avatar" placeholder="URL da foto (padrão: foto.png)" />
+            <label class="upload-btn">Upload<input type="file" id="srv-bot-avatar-file" accept="image/*" /></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Bio do Bot de Tickets</label>
+          <textarea id="srv-bot-bio" maxlength="200"></textarea>
+        </div>
+        <button class="btn btn-primary" id="srv-save-bot">Salvar Bot do Servidor</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -256,28 +478,64 @@
       <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
     <span class="view-title">Mensagens</span>
+    <button class="mini-btn gold" id="btn-new-group-dm">+ Grupo Privado</button>
   </div>
-  <div style="padding:20px;max-width:640px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:10px;" id="dm-friends-list"></div>
+  <div style="padding:20px;max-width:640px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:12px;">
+    <div class="list-item bot-highlight" id="hezz-bot-dm-item">
+      <img class="avatar round" src="foto.png" alt="Hezz Bot" />
+      <div class="list-item-info">
+        <div class="list-item-name">Hezz Bot <span class="badge-lover" style="background:#2b2b2b;">BOT OFICIAL</span></div>
+        <div class="list-item-sub">Alertas de moderação & Suporte oficial</div>
+      </div>
+    </div>
+    <p style="font-size:.82rem;font-weight:700;color:var(--text-soft);">Grupos Privados</p>
+    <div id="groups-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <p style="font-size:.82rem;font-weight:700;color:var(--text-soft);">Conversas com Amigos</p>
+    <div id="dm-friends-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
 </div>
 
-<!-- VIEW: DM -->
+<!-- VIEW: DM & GRUPO PRIVADO -->
 <div class="view" id="view-dm">
   <div class="view-header">
     <button class="back-btn" onclick="closeView('view-dm')">
       <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <img id="dm-header-avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--pastel-blue);" src="" />
-    <span class="view-title" id="dm-header-name" style="font-size:1rem;">Amigo</span>
-    <button class="header-btn" id="dm-call-btn" title="Ligar (registra no histórico)">
+    <div class="avatar-deco-wrap" id="dm-header-clickable" style="cursor:pointer;">
+      <img id="dm-header-deco" class="avatar-deco" src="" style="display:none;" alt="" />
+      <img id="dm-header-avatar" class="avatar round" style="width:36px;height:36px;" src="" />
+    </div>
+    <div style="display:flex;flex-direction:column;min-width:0;flex:1;cursor:pointer;" id="dm-header-info">
+      <span class="view-title" id="dm-header-name" style="font-size:1rem;">Amigo</span>
+      <span id="dm-header-sub" style="font-size:.7rem;color:var(--text-soft);"></span>
+    </div>
+    <button class="mini-btn gold" id="dm-make-group-btn" title="Criar grupo privado com este amigo" style="display:none;">+ Grupo</button>
+    <button class="mini-btn accept" id="dm-group-add-btn" title="Adicionar pessoas ao grupo" style="display:none;">+ Gente</button>
+    <button class="back-btn" id="dm-profile-btn" title="Ver Perfil / Denunciar">👤</button>
+    <button class="header-btn" id="dm-call-btn" title="Iniciar Call">
       <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
     </button>
   </div>
+
+  <div id="dm-support-banner" class="support-banner" style="display:none;">
+    <span>Suporte oficial: <a href="mailto:supporthezzapp@gmail.com">supporthezzapp@gmail.com</a></span>
+    <button class="mini-btn gold" id="dm-open-support-btn">Pedir Suporte</button>
+  </div>
+
   <div class="chat-messages" id="dm-messages"></div>
   <div class="typing-bar" id="dm-typing"></div>
-  <div class="chat-input-area">
+  <div class="chat-input-area" style="position:relative;">
+    <div class="autocomplete-popup" id="dm-mention-popup"></div>
     <div class="emoji-picker" id="dm-emoji-picker"></div>
     <button class="chat-btn" id="dm-btn-emoji" title="Emojis">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    </button>
+    <label class="chat-btn" style="cursor:pointer;" title="Enviar Imagem">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <input type="file" id="dm-image-upload" accept="image/*" style="display:none;" />
+    </label>
+    <button class="chat-btn record" id="dm-btn-record" title="Gravar Áudio">
+      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
     </button>
     <input type="text" class="chat-input" id="dm-input" placeholder="Digite uma mensagem..." />
     <button class="chat-btn" id="dm-send" title="Enviar">
@@ -292,10 +550,45 @@
   <div id="call-invite-list" style="display:none;gap:6px;flex-wrap:wrap;padding:8px 12px;background:#2a2a2a"></div>
   <div style="display:flex;gap:8px;justify-content:center;padding:14px;background:#111;flex-wrap:wrap">
     <button class="btn" id="call-mic" style="padding:10px 14px">🎤 Mic</button>
-    <button class="btn" id="call-cam" style="padding:10px 14px">📷 Vídeo</button>
-    <button class="btn" id="call-scr" style="padding:10px 14px">🖥️ Tela</button>
-    <button class="btn" id="call-add" style="padding:10px 14px">➕ Convidar</button>
+    <button class="btn" id="call-cam" style="padding:10px 14px">📷 Ligar Vídeo</button>
+    <button class="btn" id="call-scr" style="padding:10px 14px">🖥️ Compartilhar Tela</button>
+    <button class="btn" id="call-cinema-btn" style="padding:10px 14px;background:var(--gold);color:#fff">🎬 Modo Cinema</button>
+    <button class="btn" id="call-add" style="padding:10px 14px">➕ Convidar na DM</button>
     <button class="btn" id="call-leave" style="padding:10px 14px;background:#e26a6a;color:#fff">Sair</button>
+  </div>
+</div>
+
+<!-- VIEW: MODO CINEMA TELA CHEIA -->
+<div class="view" id="view-cinema" style="background:#0c0c0e;color:#fff;z-index:220">
+  <div class="cinema-header">
+    <span id="cinema-title" style="font-weight:700;">🎬 Modo Cinema</span>
+    <span id="cinema-url-badge" style="font-size:.72rem;color:#ffd966;word-break:break-all;flex:1;"></span>
+    <button class="mini-btn gold" id="cinema-change-url-btn" style="display:none;">Trocar Vídeo</button>
+    <button class="mini-btn" id="cinema-mic-btn">🎤 Mic</button>
+    <button class="mini-btn decline" id="cinema-close-btn">Voltar pra Call</button>
+  </div>
+  <div class="cinema-body">
+    <div class="cinema-stage">
+      <div class="cinema-player-wrap">
+        <iframe id="cinema-iframe" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <div id="cinema-guest-shield" class="cinema-guest-shield" title="Apenas o dono da sala controla o vídeo"></div>
+      </div>
+      <div class="cinema-host-controls" id="cinema-host-controls" style="display:none;">
+        <button class="mini-btn gold" id="cinema-play-btn">⏯️ Play/Pausa</button>
+        <button class="mini-btn" id="cinema-back-btn">⏪ -15s</button>
+        <button class="mini-btn" id="cinema-fwd-btn">⏩ +15s</button>
+        <input type="text" id="cinema-seek-input" placeholder="mm:ss" style="width:76px;padding:6px 8px;border-radius:8px;border:1px solid #444;background:#222;color:#fff;font-size:.8rem;" />
+        <button class="mini-btn accept" id="cinema-seek-btn">Ir</button>
+      </div>
+    </div>
+    <div class="cinema-chat">
+      <div style="padding:10px 12px;border-bottom:1px solid #2b2b2b;font-weight:700;font-size:.85rem;">Chat da Party</div>
+      <div class="cinema-chat-msgs" id="cinema-chat-messages"></div>
+      <div class="cinema-chat-input-row">
+        <input type="text" id="cinema-chat-input" placeholder="Falar na party..." />
+        <button class="mini-btn gold" id="cinema-chat-send">Enviar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -311,20 +604,22 @@
 </div>
 
 <!-- VIEW: CONFIGURAÇÕES -->
-<div class="view" id="view-settings">
-  <div class="view-header">
-    <button class="back-btn" onclick="closeView('view-settings')">
-      <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-    </button>
-    <span class="view-title">Configurações</span>
-  </div>
+<div class="view settings-view" id="view-settings">
+  <div class="settings-top-fixed">
+    <div class="view-header" style="position:static;">
+      <button class="back-btn" onclick="closeView('view-settings')">
+        <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <span class="view-title">Configurações</span>
+    </div>
 
-  <div class="tabs" id="settings-tabs">
-    <button class="tab active" data-sub="plans">Planos</button>
-    <button class="tab" data-sub="account">Conta</button>
-    <button class="tab" data-sub="profile">Perfil</button>
-    <button class="tab" data-sub="privacy">Privacidade</button>
-    <button class="tab" data-sub="data">Exclusão de Dados</button>
+    <div class="tabs" id="settings-tabs">
+      <button class="tab active" data-sub="plans">Planos</button>
+      <button class="tab" data-sub="account">Conta</button>
+      <button class="tab" data-sub="profile">Perfil</button>
+      <button class="tab" data-sub="privacy">Privacidade</button>
+      <button class="tab" data-sub="data">Exclusão de Dados</button>
+    </div>
   </div>
 
   <div class="settings-body">
@@ -339,13 +634,10 @@
           <li>Chat e call normal</li>
           <li>Upload: até 5MB</li>
           <li>Áudio: até 1 minuto</li>
-          <li>Foto de perfil via link (GIF liberado via link)</li>
-          <li>Banner via link</li>
-          <li>Editar mensagem: até 2 min</li>
-          <li>Reações: 5 emojis padrão (emoji personalizado via URL)</li>
-          <li>Fixar: 3 conversas</li>
-          <li>Criar: até 10 comunidades</li>
-          <li>Call: qualidade normal</li>
+          <li>Foto de perfil, banner e moldura via link</li>
+          <li>Reações padrão</li>
+          <li>Criar: até 10 servidores</li>
+          <li>Link de convite aleatório</li>
         </ul>
       </div>
 
@@ -355,22 +647,14 @@
           <span class="plan-price" id="plan-pulse-label">R$ 5,00</span>
         </div>
         <ul class="plan-features">
-          <li>TAG verificada (branca)</li>
-          <li>TAG personalizada (#LOVER, #SEUNOME, etc)</li>
-          <li>Upload: até 10MB</li>
-          <li>Áudio: até 5 minutos</li>
-          <li>Upload de foto animada (GIF) direto no app</li>
-          <li>Upload de banner animado direto no app</li>
-          <li>Cor do nome no chat (qualquer cor)</li>
-          <li>Editar mensagem: até 30 min</li>
-          <li>Emojis exclusivos HEZZ LOVER</li>
-          <li>Fixar: até 10 conversas</li>
-          <li>Criar: até 20 comunidades</li>
+          <li>Upload: até 10MB e Áudio até 5 minutos</li>
+          <li>Upload direto de foto, banner GIF e moldura</li>
+          <li>Molduras exclusivas (ex.: <b>natal.png</b>)</li>
+          <li>Emojis exclusivos <b>HEZZ LOVER</b></li>
+          <li>Link de convite único personalizado no servidor</li>
+          <li>Criar: até 20 servidores</li>
           <li>Call: ótima qualidade + compartilhar tela com som</li>
-          <li>Entrar em call cheia (fura fila)</li>
-          <li>Badge HEZZ LOVER exclusivo no perfil</li>
-          <li>Prioridade no suporte</li>
-          <li>Mural de LOVERS dentro do app</li>
+          <li>Badge <b>LOVER</b> exclusivo no perfil</li>
         </ul>
 
         <button class="btn btn-primary" id="btn-buy-pulse">Quero o PULSE</button>
@@ -393,7 +677,6 @@
           <div class="form-group">
             <label>Comprovante (upload)</label>
             <label class="upload-btn" style="align-self:flex-start;">
-              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               Anexar comprovante
               <input type="file" id="proof-file" accept="image/*" />
             </label>
@@ -401,7 +684,6 @@
           </div>
 
           <button class="btn btn-primary" id="btn-send-proof">Enviar pedido de ativação</button>
-          <div class="hint">Seu pedido será analisado manualmente. Você recebe o PULSE após a aprovação.</div>
         </div>
       </div>
     </div>
@@ -413,6 +695,7 @@
           <div><span style="color:var(--text-soft);">Nick:</span> <b id="acc-nick">—</b></div>
           <div><span style="color:var(--text-soft);">ID:</span> <b id="acc-uid" style="word-break:break-all;">—</b></div>
           <div><span style="color:var(--text-soft);">Plano:</span> <b id="acc-plan">FREE</b></div>
+          <div><span style="color:var(--text-soft);">Alertas / Strikes:</span> <b id="acc-strikes">0</b></div>
           <div><span style="color:var(--text-soft);">Criado em:</span> <b id="acc-created">—</b></div>
         </div>
         <button class="btn btn-secondary" id="btn-copy-id" style="align-self:flex-start;padding:10px 16px;font-size:.8rem;">Copiar meu ID</button>
@@ -422,20 +705,23 @@
     <div class="subview" id="sub-profile">
       <div class="card">
         <h3>Perfil</h3>
-        <div class="hint">No plano <b>FREE</b>, foto e banner são <b>apenas via URL</b>. Upload direto é do <b>PULSE</b>.</div>
+        <div class="hint">Defina sua foto, banner, moldura de avatar e faixa etária (16+ / 18+).</div>
         <button class="btn btn-primary" id="btn-open-profile-edit" style="align-self:flex-start;">Editar Perfil</button>
       </div>
     </div>
 
     <div class="subview" id="sub-privacy">
       <div class="card">
-        <h3>Privacidade</h3>
+        <h3>Privacidade & Notificações</h3>
         <div class="form-group">
           <label>Quem pode enviar pedidos de amizade</label>
           <select id="privacy-friend-requests">
             <option value="all">Todos</option>
             <option value="none">Ninguém</option>
           </select>
+        </div>
+        <div class="row">
+          <button class="btn btn-secondary" id="btn-enable-notif">🔔 Ativar Notificações no Celular / Navegador</button>
         </div>
         <button class="btn btn-primary" id="btn-save-privacy" style="align-self:flex-start;">Salvar</button>
       </div>
@@ -445,13 +731,229 @@
       <div class="danger-zone">
         <h3 style="font-size:.95rem;">Exclusão de Dados</h3>
         <p style="font-size:.82rem;color:var(--text-soft);line-height:1.45;">
-          Isso apaga seu perfil, seus amigos, seus pedidos de amizade e sua lista de comunidades.
-          Esta ação não pode ser desfeita.
+          Isso apaga seu perfil, seus amigos, seus pedidos de amizade e sua lista de servidores.
         </p>
         <button class="btn btn-danger" id="btn-delete-data" style="align-self:flex-start;">Excluir minha conta e dados</button>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- MODAIS GERAIS -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <!-- Modal Perfil de Usuário + Denunciar -->
+  <div class="hezz-modal" id="user-profile-modal">
+    <div class="pm-banner" id="upm-banner">
+      <div class="pm-avatar-wrap">
+        <img id="upm-deco" class="avatar-deco preview-deco" src="" style="display:none;" alt="" />
+        <img id="upm-avatar" class="preview-avatar round" src="" alt="" />
+      </div>
+    </div>
+    <div class="pm-body">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <h3 id="upm-nick">Usuário</h3>
+        <span id="upm-badge" class="badge-lover" style="display:none;">LOVER</span>
+        <span id="upm-age" class="age-badge"></span>
+      </div>
+      <p id="upm-status" style="font-size:.78rem;color:var(--text-soft);"></p>
+      <p id="upm-bio" style="font-size:.84rem;line-height:1.4;"></p>
+      <div id="upm-bot-support" style="display:none;flex-direction:column;gap:8px;">
+        <div class="hint">Suporte: <a href="mailto:supporthezzapp@gmail.com">supporthezzapp@gmail.com</a></div>
+        <button class="btn btn-primary" id="upm-support-chat-btn">💬 Pedir Suporte (Abrir Chat)</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+        <button class="btn btn-secondary" id="upm-add-friend-btn">Adicionar Amigo</button>
+        <button class="btn btn-danger" id="upm-report-btn">🚨 Denunciar Perfil</button>
+        <button class="btn" onclick="closeModals()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Denunciar Perfil -->
+  <div class="hezz-modal" id="report-modal">
+    <div class="modal-inner">
+      <h3>🚨 Denunciar Perfil</h3>
+      <p style="font-size:.8rem;color:var(--text-soft);">Denunciando: <b id="rep-target-nick">—</b></p>
+      <textarea id="rep-reason" placeholder="Descreva o que aconteceu..." style="min-height:90px;padding:10px;border:2px solid var(--gold-light);border-radius:10px;"></textarea>
+      <label class="upload-btn" style="align-self:flex-start;">
+        Anexar Print (opcional)
+        <input type="file" id="rep-proof-file" accept="image/*" />
+      </label>
+      <img id="rep-proof-preview" style="display:none;max-width:100%;max-height:160px;object-fit:contain;border-radius:10px;" />
+      <div class="row">
+        <button class="btn btn-danger" id="rep-submit-btn">Enviar Denúncia</button>
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Suporte Hezz Bot -->
+  <div class="hezz-modal" id="support-modal">
+    <div class="modal-inner">
+      <h3>💬 Pedir Suporte — Hezz Bot</h3>
+      <p style="font-size:.78rem;color:var(--text-soft);">Sua reclamação vai direto para o painel da administração.</p>
+      <input type="text" id="sup-subject" placeholder="Assunto (ex: Bug, Denúncia, Conta)" />
+      <textarea id="sup-message" placeholder="Escreva sua reclamação ou dúvida..." style="min-height:90px;padding:10px;border:2px solid var(--gold-light);border-radius:10px;"></textarea>
+      <div class="row">
+        <button class="btn btn-primary" id="sup-submit-btn">Enviar ao Suporte</button>
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Aceitar/Recusar Convite de Servidor -->
+  <div class="hezz-modal" id="invite-modal">
+    <div class="modal-inner" style="text-align:center;">
+      <img id="inv-avatar" class="avatar round" style="width:68px;height:68px;margin:0 auto;" src="" />
+      <h3 id="inv-title">Convite de Servidor</h3>
+      <p id="inv-subtitle" style="font-size:.85rem;color:var(--text-soft);"></p>
+      <span id="inv-age" class="age-badge" style="align-self:center;"></span>
+      <div class="row" style="justify-content:center;margin-top:8px;">
+        <button class="btn btn-primary" id="inv-accept-btn">Aceitar</button>
+        <button class="btn btn-danger" id="inv-decline-btn">Recusar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal URL Cinema -->
+  <div class="hezz-modal" id="cinema-url-modal">
+    <div class="modal-inner">
+      <h3>🎬 Abrir Vídeo no Modo Cinema</h3>
+      <p style="font-size:.78rem;color:var(--text-soft);">Cole o link do YouTube. O sistema inserirá automaticamente um <b>-</b> entre o <b>t</b> e o <b>u</b> (<code>yout-ube.com</code>) e abrirá em tela cheia!</p>
+      <input type="url" id="cinema-url-input" placeholder="https://www.youtube.com/watch?v=..." />
+      <div class="row">
+        <button class="btn btn-primary" id="cinema-url-ok">OK / Abrir Cinema</button>
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Enquete -->
+  <div class="hezz-modal" id="poll-modal">
+    <div class="modal-inner">
+      <h3>📊 Criar Enquete</h3>
+      <input type="text" id="poll-question" placeholder="Pergunta da enquete" />
+      <input type="text" id="poll-opt1" placeholder="Opção 1" />
+      <input type="text" id="poll-opt2" placeholder="Opção 2" />
+      <input type="text" id="poll-opt3" placeholder="Opção 3 (opcional)" />
+      <div class="row">
+        <button class="btn btn-primary" id="poll-create-btn">Publicar Enquete</button>
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Criar Categoria -->
+  <div class="hezz-modal" id="category-modal">
+    <div class="modal-inner">
+      <h3>Nova Categoria</h3>
+      <input type="text" id="cat-name-input" placeholder="Nome da categoria (ex: TEXTO, VOZ)" />
+      <div class="row">
+        <button class="btn btn-primary" id="cat-create-btn">Criar</button>
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Criar/Editar Canal -->
+  <div class="hezz-modal" id="channel-modal">
+    <div class="modal-inner">
+      <h3 id="chan-modal-title">Novo Canal</h3>
+      <input type="text" id="chan-name-input" placeholder="Nome do canal" />
+      <select id="chan-type-select">
+        <option value="text">Canal de Chat (Texto)</option>
+        <option value="voice">Canal de Call (Voz/Vídeo)</option>
+      </select>
+      <select id="chan-cat-select"></select>
+      <textarea id="chan-rules-input" placeholder="Regras deste canal..." style="min-height:60px;padding:10px;border:2px solid var(--gold-light);border-radius:10px;"></textarea>
+      <label style="font-size:.82rem;display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="chan-sync-cat" checked /> Sincronizar permissões/regras com a categoria
+      </label>
+      <div class="row">
+        <button class="btn btn-primary" id="chan-save-btn">Salvar Canal</button>
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Permissões de Cargo -->
+  <div class="hezz-modal" id="role-edit-modal">
+    <div class="modal-inner">
+      <h3 id="rem-title">Permissões do Cargo</h3>
+      <div id="rem-perms" style="display:flex;flex-direction:column;gap:8px;font-size:.85rem;"></div>
+      <div class="row">
+        <button class="btn btn-primary" id="rem-save-btn">Salvar Permissões</button>
+        <button class="btn" onclick="closeModals()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Grupo Privado -->
+  <div class="hezz-modal" id="group-modal">
+    <div class="modal-inner">
+      <h3 id="grp-modal-title">Grupo Privado</h3>
+      <input type="text" id="grp-name-input" placeholder="Nome do grupo" />
+      <p style="font-size:.8rem;color:var(--text-soft);">Selecione amigos para adicionar:</p>
+      <div id="grp-friends-pick" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      <div class="row">
+        <button class="btn btn-primary" id="grp-save-btn">Confirmar</button>
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal /setup Ticket Bot -->
+  <div class="hezz-modal" id="setup-ticket-modal">
+    <div class="modal-inner">
+      <h3>🎫 /setup — Configurar Tickets do Servidor</h3>
+      <input type="text" id="tk-id" placeholder="ID do ticket (ex: suporte, vip)" maxlength="20" />
+      <input type="text" id="tk-title" placeholder="Título do painel" maxlength="60" />
+      <textarea id="tk-text" placeholder="Texto do painel..." style="min-height:60px;padding:10px;border:2px solid var(--gold-light);border-radius:10px;"></textarea>
+      <label style="font-size:.8rem;">Cargo mencionado ao abrir ticket:</label>
+      <select id="tk-role"></select>
+      <button class="btn btn-primary" id="tk-create-btn">Salvar Ticket</button>
+      <p style="font-size:.82rem;font-weight:700;margin-top:6px;">Tickets configurados (use /send-ID no chat):</p>
+      <div id="tk-existing-list" style="max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      <button class="btn" onclick="closeModals()">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Modal Mensagens Fixadas -->
+  <div class="hezz-modal" id="pinned-modal">
+    <div class="modal-inner">
+      <h3>📌 Mensagens Fixadas</h3>
+      <div id="pinned-list" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"></div>
+      <button class="btn" onclick="closeModals()">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Modal Timeout Membro -->
+  <div class="hezz-modal" id="timeout-modal">
+    <div class="modal-inner">
+      <h3>⏳ Aplicar Timeout</h3>
+      <p id="to-target-name" style="font-size:.85rem;"></p>
+      <select id="to-duration">
+        <option value="60">1 minuto</option>
+        <option value="300">5 minutos</option>
+        <option value="600">10 minutos</option>
+        <option value="3600">1 hora</option>
+      </select>
+      <div class="row">
+        <button class="btn btn-primary" id="to-confirm-btn">Aplicar Timeout</button>
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Convidar Amigos pro Servidor -->
+  <div class="hezz-modal" id="server-invite-friends-modal">
+    <div class="modal-inner">
+      <h3>📨 Convidar para o Servidor</h3>
+      <div class="hint">Link / Código de convite: <b id="sif-link" style="word-break:break-all;cursor:pointer;">—</b></div>
+      <div id="sif-friends-list" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      <button class="btn" onclick="closeModals()">Fechar</button>
+    </div>
   </div>
 </div>
 
