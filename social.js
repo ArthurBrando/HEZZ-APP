@@ -1,5 +1,3 @@
---- START OF FILE social.js ---
-
 import { ref, set, update, get, onValue, query, limitToLast, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { db, S, $, esc, DEFAULT_AVATAR, dmPairId, maxUploadMB, labelState, fileToBase64 } from "./state.js";
 import { showToast, openView, openModal, closeModals, watchTyping, bindTyping } from "./ui.js";
