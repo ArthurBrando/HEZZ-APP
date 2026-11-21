@@ -1,5 +1,3 @@
---- START OF FILE servers.js ---
-
 import { ref, set, update, get, onValue, query, limitToLast, push, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { db, S, $, esc, todayKey, DEFAULT_AVATAR, dmPairId, isPulse, maxUploadMB, maxCommunities, canAccessAge, ageBadgeLabel, applyAgeBadge, fileToBase64 } from "./state.js";
 import { showToast, copyText, setOpen, openView, closeView, openModal, closeModals, watchTyping, bindTyping, fmt } from "./ui.js";
