@@ -1,7 +1,7 @@
 import { ref, set, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { db, S, $, esc, SIDEBAR_W, KLIPY_KEY, isPulse, maxAudioSec } from "./state.js";
 
-let toastTimer = null, typingTimer = null, mediaRecorder = null, isRecording = false, recordTarget = 'server', recordTimer = null, lastBuiltPlan = null;
+let toastTimer = null, typingTimer = null, mediaRecorder = null, isRecording = false, recordTarget = 'server', recordTimer = null, lastBuiltKey = null;
 let audioChunks = [];
 const typingUnsubs = {};
 const emojis = "😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😝 😜 🤪 🤨 🧐 🤓 😎 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 😣 😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 🤥 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 🤑 🤠 😈 👿 👹 👺 🤡 💩 👻 💀 👽 👾 🤖 🎃 😺 😸 😹 😻 😼 😽 🙀 😿 😾".split(" ");
@@ -135,18 +135,56 @@ function buildEmojiPicker(pickerEl, inputEl, target){
       </div>
     </div>`;
 
-  const grid = pickerEl.querySelector('.emoji-grid'), gifBox = pickerEl.querySelector('.gif-box'), gifGrid = pickerEl.querySelector('.gif-grid'), gifInp = gifBox.querySelector('input');
-  const sec = document.createElement("div"); sec.className = "emoji-sec"; sec.textContent = "EMOJIS DO ASSINANTE (PULSE)"; grid.appendChild(sec);
+  const grid = pickerEl.querySelector('.emoji-grid');
+  const gifBox = pickerEl.querySelector('.gif-box');
+  const gifGrid = pickerEl.querySelector('.gif-grid');
+  const gifInp = gifBox.querySelector('input');
+
+  // ✅ NOVO: EMOJIS DO SERVIDOR — aparecem SEM cadeado quando você está num servidor
+  if (target === 'server' && S.currentServerId) {
+    const secSrv = document.createElement("div");
+    secSrv.className = "emoji-sec";
+    secSrv.textContent = "EMOJIS DESTE SERVIDOR";
+    grid.appendChild(secSrv);
+
+    for (let i = 1; i <= 5; i++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "emoji-btn"; // sem cadeado — uso livre dentro do servidor
+      b.innerHTML = `<img class="pemoji" src="emoji${i}.png" alt="">`;
+      b.title = "Uso livre dentro deste servidor";
+      b.onclick = () => { inputEl.value += `:pulse${i}:`; inputEl.focus(); };
+      grid.appendChild(b);
+    }
+  }
+
+  // Seção PULSE (com cadeado se não for assinante)
+  const sec = document.createElement("div");
+  sec.className = "emoji-sec";
+  sec.textContent = "EMOJIS DO ASSINANTE (PULSE)";
+  grid.appendChild(sec);
   for (let i = 1; i <= 5; i++) {
-    const b = document.createElement("button"); b.type = "button";
+    const b = document.createElement("button");
+    b.type = "button";
     b.className = "emoji-btn" + (isPulse() ? "" : " emoji-locked");
     b.innerHTML = `<img class="pemoji" src="emoji${i}.png" alt="">`;
-    b.onclick = () => { if (!isPulse()) return showToast("Emojis exclusivos para assinantes PULSE"); inputEl.value += `:pulse${i}:`; inputEl.focus(); };
+    b.title = isPulse() ? "Uso em qualquer lugar (PULSE)" : "Exclusivo PULSE";
+    b.onclick = () => {
+      if (!isPulse()) return showToast("Emojis exclusivos para assinantes PULSE — use livremente dentro de um servidor");
+      inputEl.value += `:pulse${i}:`;
+      inputEl.focus();
+    };
     grid.appendChild(b);
   }
-  const sec2 = document.createElement("div"); sec2.className = "emoji-sec"; sec2.textContent = "PADRÃO"; grid.appendChild(sec2);
+
+  // Seção padrão
+  const sec2 = document.createElement("div");
+  sec2.className = "emoji-sec";
+  sec2.textContent = "PADRÃO";
+  grid.appendChild(sec2);
   emojis.forEach(e => {
-    const btn = document.createElement("button"); btn.className = "emoji-btn"; btn.type = "button"; btn.textContent = e;
+    const btn = document.createElement("button");
+    btn.className = "emoji-btn"; btn.type = "button"; btn.textContent = e;
     btn.onclick = () => { inputEl.value += e; inputEl.focus(); };
     grid.appendChild(btn);
   });
@@ -164,8 +202,15 @@ function buildEmojiPicker(pickerEl, inputEl, target){
   gifInp.oninput = () => { clearTimeout(gifDebounce); gifDebounce = setTimeout(() => loadKlipyGifs(gifGrid, gifInp.value.trim(), target, pickerEl), 400); };
 }
 
-export function refreshEmojiPickers(){
-  const p = isPulse(); if (lastBuiltPlan === p) return; lastBuiltPlan = p;
+/**
+ * Reconstrói os pickers quando necessário.
+ * Chave considera plano E servidor atual — então quando entra/sai de servidor, reconstrói
+ * para mostrar/esconder os emojis do servidor sem cadeado.
+ */
+export function refreshEmojiPickers(force = false){
+  const key = `${isPulse()}_${S.currentServerId || 'dm'}`;
+  if (!force && lastBuiltKey === key) return;
+  lastBuiltKey = key;
   buildEmojiPicker($("server-emoji-picker"), $("server-chat-input"), 'server');
   buildEmojiPicker($("dm-emoji-picker"), $("dm-input"), 'dm');
 }
@@ -185,8 +230,22 @@ export function initUI(){
   $("modal-backdrop").addEventListener("click", (e) => { if (e.target === $("modal-backdrop")) closeModals(); });
   $("server-btn-record").addEventListener("click", () => toggleAudioRecord('server', $("server-btn-record")));
   $("dm-btn-record").addEventListener("click", () => toggleAudioRecord('dm', $("dm-btn-record")));
-  $("server-btn-emoji").addEventListener("click", (e) => { e.stopPropagation(); $("server-emoji-picker").classList.toggle("show"); $("dm-emoji-picker").classList.remove("show"); $("server-tools-menu").classList.remove("show"); });
-  $("dm-btn-emoji").addEventListener("click", (e) => { e.stopPropagation(); $("dm-emoji-picker").classList.toggle("show"); $("server-emoji-picker").classList.remove("show"); });
+
+  // ✅ Força refresh ao abrir picker (garante emojis do servidor atualizados)
+  $("server-btn-emoji").addEventListener("click", (e) => {
+    refreshEmojiPickers();
+    e.stopPropagation();
+    $("server-emoji-picker").classList.toggle("show");
+    $("dm-emoji-picker").classList.remove("show");
+    $("server-tools-menu").classList.remove("show");
+  });
+  $("dm-btn-emoji").addEventListener("click", (e) => {
+    refreshEmojiPickers();
+    e.stopPropagation();
+    $("dm-emoji-picker").classList.toggle("show");
+    $("server-emoji-picker").classList.remove("show");
+  });
+
   document.addEventListener("click", (e) => {
     if (!e.target.closest("#server-emoji-picker") && !e.target.closest("#server-btn-emoji")) $("server-emoji-picker").classList.remove("show");
     if (!e.target.closest("#dm-emoji-picker") && !e.target.closest("#dm-btn-emoji")) $("dm-emoji-picker").classList.remove("show");

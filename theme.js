@@ -11,6 +11,15 @@ const THEME_LIST = [
   { id: 'custom', name: 'Personalizado', bg: 'linear-gradient(135deg,#e8b923,#d6e4f0)' }
 ];
 
+/* Converte "#abc" para "#aabbcc" e garante 7 chars (#rrggbb) */
+function hex6(h){
+  if (!h) return '#000000';
+  let s = String(h).trim();
+  if (!s.startsWith('#')) s = '#' + s;
+  if (s.length === 4) return '#' + s[1] + s[1] + s[2] + s[2] + s[3] + s[3];
+  return s.slice(0, 7);
+}
+
 function injectFontsAndCSS(){
   if (!document.getElementById("hezz-fonts")) {
     const l = document.createElement("link");
@@ -94,31 +103,92 @@ export function applyTheme(cfg){
   const root = document.documentElement;
   root.setAttribute("data-theme", theme);
   localStorage.setItem("hezz_theme_mode", theme);
-  const vars = ['--white','--surface','--surface-2','--gold','--gold-light','--gold-soft','--text','--text-soft','--border','--input-bg','--msg-bg','--msg-own-bg'];
+
+  const vars = ['--white','--surface','--surface-2','--gold','--gold-light','--gold-soft',
+    '--text','--text-soft','--muted','--border','--input-bg','--msg-bg','--msg-own-bg',
+    '--pastel-blue','--pastel-pink','--pastel-green'];
   vars.forEach(v => root.style.removeProperty(v));
+
   if (theme === 'custom' && cfg) {
     localStorage.setItem("hezz_theme_custom", JSON.stringify(cfg));
-    root.style.setProperty('--white', cfg.bg || '#1a1b26');
-    root.style.setProperty('--surface', cfg.surface || '#24283b');
-    root.style.setProperty('--surface-2', cfg.surface || '#24283b');
-    root.style.setProperty('--gold', cfg.accent || '#7aa2f7');
-    root.style.setProperty('--text', cfg.text || '#c0caf5');
-    root.style.setProperty('--text-soft', cfg.text || '#a9b1d6');
-    root.style.setProperty('--border', cfg.accent || '#7aa2f7');
-    root.style.setProperty('--input-bg', cfg.bg || '#1a1b26');
-    root.style.setProperty('--msg-bg', cfg.surface || '#24283b');
-    root.style.setProperty('--msg-own-bg', cfg.surface || '#292e42');
-    root.style.setProperty('--gold-soft', cfg.surface || '#24283b');
+
+    const accent = hex6(cfg.accent || '#7aa2f7');
+    const surface = hex6(cfg.surface || '#24283b');
+    const bg = hex6(cfg.bg || '#1a1b26');
+    const text = hex6(cfg.text || '#c0caf5');
+
+    root.style.setProperty('--white', bg);
+    root.style.setProperty('--surface', surface);
+    root.style.setProperty('--surface-2', surface);
+    root.style.setProperty('--gold', accent);
+    root.style.setProperty('--gold-light', accent + '55');  // borda suave
+    root.style.setProperty('--gold-soft', surface);
+    root.style.setProperty('--pastel-blue', surface);
+    root.style.setProperty('--pastel-pink', surface);
+    root.style.setProperty('--pastel-green', surface);
+    root.style.setProperty('--text', text);
+    root.style.setProperty('--text-soft', text + 'cc');
+    root.style.setProperty('--muted', text + '88');
+    root.style.setProperty('--border', accent + '44');
+    root.style.setProperty('--input-bg', bg);
+    root.style.setProperty('--msg-bg', surface);
+    root.style.setProperty('--msg-own-bg', surface);
   }
-  document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.themeBtn === theme));
-  const cw = $("custom-theme-box"); if (cw) cw.style.display = theme === 'custom' ? 'flex' : 'none';
+
+  // Compatibilidade: aceita data-theme E data-theme-btn
+  document.querySelectorAll('.theme-btn').forEach(b => {
+    const btnMode = b.dataset.themeBtn || b.dataset.theme;
+    b.classList.toggle('active', btnMode === theme);
+  });
+
+  const cw = $("custom-theme-box");
+  if (cw) cw.style.display = theme === 'custom' ? 'flex' : 'none';
 }
 
 export function initTheme(){
   injectFontsAndCSS();
+
   const savedCustom = JSON.parse(localStorage.getItem("hezz_theme_custom") || "null");
   applyTheme({ mode: localStorage.getItem("hezz_theme_mode") || "light", ...(savedCustom || {}) });
 
+  // ✅ 1) Liga os botões que JÁ EXISTEM no HTML (usam data-theme e ids #theme-*-c)
+  const themeGrid = $("theme-grid");
+  if (themeGrid) {
+    themeGrid.querySelectorAll(".theme-btn").forEach(b => {
+      b.onclick = () => {
+        const mode = b.dataset.theme || b.dataset.themeBtn;
+        const cfg = {
+          mode,
+          bg: $("theme-bg-c")?.value || '#121212',
+          surface: $("theme-surf-c")?.value || '#1e1e24',
+          text: $("theme-text-c")?.value || '#ffffff',
+          accent: $("theme-accent-c")?.value || '#e8b923'
+        };
+        applyTheme(cfg);
+        if (S.currentUser) update(ref(db, `users/${S.currentUser.uid}`), { theme: cfg }).catch(() => {});
+        showToast("Tema atualizado!");
+      };
+    });
+  }
+
+  // ✅ 2) Liga o botão de salvar cores personalizadas (HTML usa #btn-save-custom-theme)
+  const saveCustomBtn = $("btn-save-custom-theme");
+  if (saveCustomBtn) {
+    saveCustomBtn.onclick = () => {
+      const cfg = {
+        mode: 'custom',
+        bg: $("theme-bg-c")?.value || '#121212',
+        surface: $("theme-surf-c")?.value || '#1e1e24',
+        text: $("theme-text-c")?.value || '#ffffff',
+        accent: $("theme-accent-c")?.value || '#e8b923'
+      };
+      applyTheme(cfg);
+      if (S.currentUser) update(ref(db, `users/${S.currentUser.uid}`), { theme: cfg }).catch(() => {});
+      showToast("Tema personalizado salvo!");
+    };
+  }
+
+  // 3) Fallback: se o HTML NÃO tiver #sub-appearance, cria dinamicamente
   const tabs = $("settings-tabs"), body = document.querySelector("#view-settings .settings-body");
   if (tabs && body && !$("sub-appearance")) {
     const tBtn = document.createElement("button");
@@ -130,10 +200,12 @@ export function initTheme(){
     sub.innerHTML = `<div class="card"><h3>Tema do Aplicativo</h3>
       <div class="theme-grid">${THEME_LIST.map(t => `<button type="button" class="theme-btn" data-theme-btn="${t.id}"><span class="theme-swatch" style="background:${t.bg}"></span>${esc(t.name)}</button>`).join('')}</div>
       <div id="custom-theme-box" class="gradient-controls" style="display:none;flex-direction:column;align-items:stretch;gap:8px;">
-        <div class="row"><label>Fundo <input type="color" id="ct-bg" value="${savedCustom?.bg || '#1a1b26'}"></label>
-        <label>Cards <input type="color" id="ct-surface" value="${savedCustom?.surface || '#24283b'}"></label>
-        <label>Texto <input type="color" id="ct-text" value="${savedCustom?.text || '#c0caf5'}"></label>
-        <label>Destaque <input type="color" id="ct-accent" value="${savedCustom?.accent || '#7aa2f7'}"></label></div>
+        <div class="row">
+          <label>Fundo <input type="color" id="ct-bg" value="${savedCustom?.bg || '#1a1b26'}"></label>
+          <label>Cards <input type="color" id="ct-surface" value="${savedCustom?.surface || '#24283b'}"></label>
+          <label>Texto <input type="color" id="ct-text" value="${savedCustom?.text || '#c0caf5'}"></label>
+          <label>Destaque <input type="color" id="ct-accent" value="${savedCustom?.accent || '#7aa2f7'}"></label>
+        </div>
         <button type="button" class="btn btn-primary" id="ct-save-btn">Aplicar Cores Personalizadas</button>
       </div></div>`;
     body.appendChild(sub);
@@ -151,6 +223,7 @@ export function initTheme(){
       if (S.currentUser) update(ref(db, `users/${S.currentUser.uid}`), { theme: cfg }).catch(() => {});
       showToast("Tema personalizado salvo!");
     };
+
     applyTheme({ mode: localStorage.getItem("hezz_theme_mode") || "light", ...(savedCustom || {}) });
   }
 }

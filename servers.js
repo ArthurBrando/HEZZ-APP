@@ -2,7 +2,7 @@ import { ref, set, update, get, onValue, query, limitToLast, push, remove } from
 import { db, S, $, esc, todayKey, DEFAULT_AVATAR, dmPairId, isPulse, maxUploadMB, maxCommunities, canAccessAge, ageBadgeLabel, applyAgeBadge, fileToBase64 } from "./state.js";
 import { showToast, copyText, setOpen, openView, closeView, openModal, closeModals, watchTyping, bindTyping, fmt } from "./ui.js";
 import { joinRoom, openCinemaFromAnywhere } from "./calls.js";
-import { myMemberPerms, checkSendCooldown, renderMessage, setupInputPopups } from "./chat.js";
+import { myMemberPerms, checkSendCooldown, renderMessage, setupInputPopups, attachReplyToPayload } from "./chat.js";
 
 const SVG_HASH = '<svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
 const SVG_VOL = '<svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
@@ -23,6 +23,23 @@ let pendingInviteServer = null;
 let serverEditingChanId = null;
 let editingRoleId = null;
 let timeoutTargetUid = null;
+
+/* ============================================================
+   CONTROLE DE ACESSO A TICKETS
+   Ticket só aparece/pode ser acessado por:
+   - Admin (admin / manageChannels / manageMessages)
+   - Dono do servidor
+   - Quem abriu o ticket (ticketOwnerUid)
+   ============================================================ */
+function canSeeTicketChannel(ch) {
+  if (!ch || ch.type !== 'ticket') return true;
+  if (!S.currentUser || !S.currentServerData) return false;
+  const perms = myMemberPerms();
+  const isAdmin = !!(perms.admin || perms.manageChannels || perms.manageMessages);
+  const isOwner = S.currentServerData.ownerUid === S.currentUser.uid;
+  const isTicketOwner = ch.ticketOwnerUid === S.currentUser.uid;
+  return isAdmin || isOwner || isTicketOwner;
+}
 
 function randomInviteCode(){
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -138,7 +155,12 @@ async function openServer(cid){
 
   S.currentServerId = cid;
   S.currentServerData = srv;
-  S.currentChannelId = srv.channels?.geral ? 'geral' : (Object.keys(srv.channels || {})[0] || 'geral');
+  // Escolhe canal inicial respeitando acesso a tickets
+  const firstVisible = srv.channels?.geral
+    ? 'geral'
+    : (Object.keys(srv.channels || {}).find(k => canSeeTicketChannel(srv.channels[k])) || 'geral');
+  S.currentChannelId = firstVisible;
+  S.replyTo = null;
   openView('view-server');
 
   if (!srv.members?.[S.currentUser.uid]) {
@@ -179,40 +201,71 @@ function renderServerUI(){
     grp.className = "cat-group";
     grp.innerHTML = `<div class="cat-header"><span>${esc(cat.name)}</span></div>`;
 
-    Object.entries(chans).filter(([, ch]) => (ch.categoryId || Object.keys(cats)[0]) === catId).forEach(([chId, ch]) => {
-      const item = document.createElement("div");
-      item.className = "chan-item" + (chId === S.currentChannelId ? " active" : "");
-      const icon = ch.type === 'voice' ? SVG_VOL : ch.type === 'ticket' ? SVG_TAG : SVG_HASH;
-      item.innerHTML = `${icon}<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(ch.name)}</span>`;
-      if (isAdmin) {
-        const eb = document.createElement("button");
-        eb.className = "chan-edit-btn"; eb.innerHTML = SVG_EDIT;
-        eb.onclick = (e) => { e.stopPropagation(); openEditChannelModal(chId, ch); };
-        item.appendChild(eb);
-      }
-      item.onclick = () => {
-        if (ch.type === 'voice') {
-          joinRoom(`srv_${S.currentServerId}_${chId}`);
-        } else {
-          switchServerChannel(chId);
-          $("server-channels-drawer").classList.remove("open");
+    // Filtra canais da categoria + aplica trava de acesso a tickets
+    Object.entries(chans)
+      .filter(([, ch]) => (ch.categoryId || Object.keys(cats)[0]) === catId)
+      .filter(([, ch]) => canSeeTicketChannel(ch))
+      .forEach(([chId, ch]) => {
+        const item = document.createElement("div");
+        item.className = "chan-item" + (chId === S.currentChannelId ? " active" : "");
+        const icon = ch.type === 'voice' ? SVG_VOL : ch.type === 'ticket' ? SVG_TAG : SVG_HASH;
+        item.innerHTML = `${icon}<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(ch.name)}</span>`;
+        if (isAdmin) {
+          const eb = document.createElement("button");
+          eb.className = "chan-edit-btn"; eb.innerHTML = SVG_EDIT;
+          eb.onclick = (e) => { e.stopPropagation(); openEditChannelModal(chId, ch); };
+          item.appendChild(eb);
         }
-      };
-      grp.appendChild(item);
-    });
+        item.onclick = () => {
+          if (ch.type === 'voice') {
+            joinRoom(`srv_${S.currentServerId}_${chId}`);
+          } else {
+            switchServerChannel(chId);
+            $("server-channels-drawer").classList.remove("open");
+          }
+        };
+        grp.appendChild(item);
+      });
     catList.appendChild(grp);
   });
 
   const curCh = chans[S.currentChannelId] || { name: "geral", type: "text" };
   $("server-chan-title").innerHTML = (curCh.type === 'ticket' ? `${SVG_TAG} ` : '# ') + esc(curCh.name || 'geral');
+
+  // Regras + info de permissões do canal
   const rulesText = curCh.syncCat && cats[curCh.categoryId]?.rules ? cats[curCh.categoryId].rules : (curCh.rules || "");
+  const cp = curCh.perms || {};
+  const blocked = [];
+  if (cp.sendText === false) blocked.push("texto off");
+  if (cp.sendMedia === false) blocked.push("mídias off");
+  if (cp.sendVoice === false) blocked.push("voz off");
+  if (cp.sendEmoji === false) blocked.push("emojis off");
+  if (cp.sendServerEmoji === false) blocked.push("emojis de servidor off");
+  const permsInfo = blocked.length ? ` 🔒 ${blocked.join(" · ")}` : "";
+
   $("server-chan-rules").innerHTML = rulesText
-    ? `${SVG_INFO} ${esc(rulesText)}`
-    : (srv.slowmode ? `${SVG_CLOCK} Slowmode: ${srv.slowmode}s` : "");
+    ? `${SVG_INFO} ${esc(rulesText)}${permsInfo ? `<span style="color:var(--text-soft);font-size:.75rem;">${esc(permsInfo)}</span>` : ""}`
+    : (srv.slowmode ? `${SVG_CLOCK} Slowmode: ${srv.slowmode}s${permsInfo ? ` · ${esc(permsInfo)}` : ""}` : "");
+
   $("server-ticket-close-btn").style.display = (curCh.type === 'ticket' && (isAdmin || curCh.ticketOwnerUid === S.currentUser.uid)) ? "inline-flex" : "none";
 }
 
 function switchServerChannel(chanId){
+  // 🔒 Trava: bloqueia acesso a tickets alheios
+  const targetCh = S.currentServerData?.channels?.[chanId];
+  if (targetCh && !canSeeTicketChannel(targetCh)) {
+    showToast("Você não tem acesso a este ticket");
+    const fallback = S.currentServerData?.channels?.geral
+      ? 'geral'
+      : (Object.keys(S.currentServerData?.channels || {})
+          .find(k => canSeeTicketChannel(S.currentServerData.channels[k])) || 'geral');
+    if (fallback !== chanId) switchServerChannel(fallback);
+    return;
+  }
+
+  S.replyTo = null;
+  const rb = document.getElementById("reply-bar");
+  if (rb) rb.style.display = "none";
   S.currentChannelId = chanId;
   renderServerUI();
   const box = $("server-chat-messages");
@@ -244,6 +297,41 @@ function populateCategorySelect(selectedCatId){
   });
 }
 
+/* ============================================================
+   TOGGLES DE PERMISSÃO DO CANAL (injetados no modal)
+   ============================================================ */
+function ensureChannelPermsUI(){
+  const saveBtn = $("chan-save-btn");
+  if (!saveBtn) return null;
+  let box = $("chan-perms-box");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "chan-perms-box";
+    box.style.cssText = "margin:10px 0 12px;padding:10px 12px;border:1px solid var(--gold-light);border-radius:10px;background:var(--gold-soft);";
+    box.innerHTML = `
+      <div style="font-weight:700;font-size:.85rem;margin-bottom:8px;">Permissões do Canal</div>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:.85rem;"><input type="checkbox" data-cperm="sendText"> Enviar mensagem de texto</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:.85rem;"><input type="checkbox" data-cperm="sendMedia"> Enviar mídias (imagens/GIFs)</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:.85rem;"><input type="checkbox" data-cperm="sendVoice"> Enviar voz/áudio</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:.85rem;"><input type="checkbox" data-cperm="sendEmoji"> Enviar emojis</label>
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:.85rem;"><input type="checkbox" data-cperm="sendServerEmoji"> Enviar emojis do servidor</label>
+    `;
+    if (saveBtn.parentNode) saveBtn.parentNode.insertBefore(box, saveBtn);
+    else ($("channel-modal")?.querySelector(".modal-card, .modal-content, .modal-body") || $("channel-modal"))?.appendChild(box);
+  }
+  return box;
+}
+
+function applyChannelPermsUI(perms){
+  const box = ensureChannelPermsUI();
+  if (!box) return;
+  const p = perms || {};
+  box.querySelectorAll("input[data-cperm]").forEach(cb => {
+    const key = cb.dataset.cperm;
+    cb.checked = p[key] !== false;
+  });
+}
+
 function openEditChannelModal(chId, ch){
   serverEditingChanId = chId;
   $("chan-modal-title").textContent = "Editar Canal";
@@ -252,6 +340,7 @@ function openEditChannelModal(chId, ch){
   $("chan-rules-input").value = ch.rules || "";
   $("chan-sync-cat").checked = !!ch.syncCat;
   populateCategorySelect(ch.categoryId);
+  applyChannelPermsUI(ch.perms);
   openModal("channel-modal");
 }
 
@@ -430,8 +519,19 @@ function renderExistingTickets(){
   });
 }
 
+/* ============================================================
+   ENVIO DE MENSAGEM (com enforcement de toggles + reply + ticket)
+   ============================================================ */
 export async function sendServerMessage(payload){
   if (!S.currentServerId || !S.currentUser) return;
+
+  // 🔒 Trava: não envia em ticket alheio
+  const targetCh = S.currentServerData?.channels?.[S.currentChannelId];
+  if (targetCh && !canSeeTicketChannel(targetCh)) {
+    showToast("Você não tem acesso a este ticket");
+    return;
+  }
+
   const meMember = S.currentServerData?.members?.[S.currentUser.uid];
   if (meMember?.timeoutUntil && meMember.timeoutUntil > Date.now()) {
     const rem = Math.ceil((meMember.timeoutUntil - Date.now()) / 1000);
@@ -441,6 +541,23 @@ export async function sendServerMessage(payload){
   const perms = myMemberPerms();
   if (perms.sendMessages === false) { showToast("Seu cargo não pode enviar mensagens"); return; }
   const isAdmin = perms.admin || perms.manageMessages;
+
+  // Toggles do canal
+  const cp = targetCh?.perms || {};
+  if (!isAdmin) {
+    if (payload.type === 'text' && cp.sendText === false) return showToast("Este canal não permite mensagens de texto");
+    if ((payload.type === 'image' || payload.type === 'gif') && cp.sendMedia === false) return showToast("Este canal não permite mídias");
+    if (payload.type === 'audio' && cp.sendVoice === false) return showToast("Este canal não permite voz/áudio");
+    if (payload.type === 'text') {
+      if (cp.sendEmoji === false && /[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{27BF}]/u.test(payload.text || '')) {
+        return showToast("Este canal não permite emojis");
+      }
+      if (cp.sendServerEmoji === false && /:pulse[1-5]:/i.test(payload.text || '')) {
+        return showToast("Este canal não permite emojis do servidor");
+      }
+    }
+  }
+
   if (!isAdmin && !checkSendCooldown(Number(S.currentServerData?.slowmode || 0))) return;
 
   S.lastSentMsgAt = Date.now();
@@ -449,12 +566,14 @@ export async function sendServerMessage(payload){
   payload.senderAvatar = S.userProfile.avatarUrl || "";
   payload.timestamp = Date.now();
 
+  // Anexa citação de resposta
+  attachReplyToPayload(payload);
+
   const path = S.currentChannelId === 'geral' && !S.currentServerData?.channels?.geral
     ? `communities/${S.currentServerId}/chats/geral`
     : `communities/${S.currentServerId}/messages/${S.currentChannelId}`;
   try {
     await push(ref(db, path), payload);
-    // Incrementa contagem de mensagens do membro no servidor para destravar conquistas
     const curMsgs = (meMember?.msgCount || 0) + 1;
     await update(ref(db, `communities/${S.currentServerId}/members/${S.currentUser.uid}`), { msgCount: curMsgs });
   }
@@ -531,7 +650,7 @@ export function initServers(){
           [catVoiceId]: { name: "CANAIS DE VOZ", order: 2, rules: "Use fone para evitar eco." }
         },
         channels: {
-          geral: { name: "geral", type: "text", categoryId: catTextId, rules: "Seja respeitoso no chat.", syncCat: true },
+          geral: { name: "geral", type: "text", categoryId: catTextId, rules: "Seja respeitoso no chat.", syncCat: true, perms: { sendText: true, sendMedia: true, sendVoice: true, sendEmoji: true, sendServerEmoji: true } },
           call1: { name: "Call Geral", type: "voice", categoryId: catVoiceId, rules: "", syncCat: true }
         },
         members: { [S.currentUser.uid]: { uid: S.currentUser.uid, nick: S.userProfile.nick || "Anônimo", avatarUrl: S.userProfile.avatarUrl || "", joinedAt: Date.now(), msgCount: 0 } }
@@ -569,16 +688,23 @@ export function initServers(){
     $("chan-modal-title").textContent = "Novo Canal";
     $("chan-name-input").value = ""; $("chan-type-select").value = "text";
     $("chan-rules-input").value = ""; $("chan-sync-cat").checked = true;
-    populateCategorySelect(); openModal("channel-modal");
+    populateCategorySelect();
+    applyChannelPermsUI({});
+    openModal("channel-modal");
   };
   $("chan-save-btn").onclick = async () => {
     if (!S.currentServerId) return;
     const name = $("chan-name-input").value.trim();
     if (!name) return;
     const key = serverEditingChanId || ("ch_" + Date.now());
+    const perms = {};
+    document.querySelectorAll("#chan-perms-box input[data-cperm]").forEach(cb => {
+      perms[cb.dataset.cperm] = cb.checked;
+    });
     await update(ref(db, `communities/${S.currentServerId}/channels/${key}`), {
       name, type: $("chan-type-select").value, categoryId: $("chan-cat-select").value,
-      rules: $("chan-rules-input").value.trim(), syncCat: $("chan-sync-cat").checked
+      rules: $("chan-rules-input").value.trim(), syncCat: $("chan-sync-cat").checked,
+      perms
     });
     closeModals(); showToast("Canal salvo!");
   };

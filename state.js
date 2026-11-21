@@ -30,14 +30,26 @@ export const NICK_FONTS = [
 
 const mkFrame = (stroke, extra = "") => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="${stroke}" stroke-width="5"/>${extra}</svg>`)}`;
 
+// ✅ +9 MOLDURAS NOVAS (6 free + 3 PULSE extras)
 export const DECO_PRESETS = [
   { id: 'none', label: 'Nenhuma', url: '', pulse: false },
+  // --- FREE ---
   { id: 'gold', label: 'Ouro', url: mkFrame('#e8b923', '<circle cx="50" cy="4" r="4" fill="#e8b923"/>'), pulse: false },
   { id: 'pastel', label: 'Pastel', url: mkFrame('#f0a8cc', '<circle cx="15" cy="20" r="4" fill="#a8d1f0"/><circle cx="85" cy="80" r="4" fill="#a8d1f0"/>'), pulse: false },
+  { id: 'silver', label: 'Prata', url: mkFrame('#b0b8c4', '<circle cx="50" cy="50" r="44" fill="none" stroke="#e8e8e8" stroke-width="2"/>'), pulse: false },
+  { id: 'rose', label: 'Rosa', url: mkFrame('#ec4899', '<circle cx="50" cy="4" r="5" fill="#ec4899"/><circle cx="50" cy="96" r="5" fill="#ec4899"/>'), pulse: false },
+  { id: 'sky', label: 'Céu', url: mkFrame('#38bdf8', '<circle cx="20" cy="20" r="3" fill="#fff"/><circle cx="80" cy="30" r="3" fill="#fff"/><circle cx="30" cy="80" r="3" fill="#fff"/><circle cx="75" cy="75" r="3" fill="#fff"/>'), pulse: false },
+  { id: 'emerald', label: 'Esmeralda', url: mkFrame('#10b981', '<circle cx="50" cy="50" r="42" fill="none" stroke="#34d399" stroke-width="3" stroke-dasharray="4 4"/>'), pulse: false },
+  { id: 'flower', label: 'Flor', url: mkFrame('#f472b6', '<circle cx="50" cy="8" r="6" fill="#fbbf24"/><circle cx="92" cy="50" r="6" fill="#fbbf24"/><circle cx="50" cy="92" r="6" fill="#fbbf24"/><circle cx="8" cy="50" r="6" fill="#fbbf24"/>'), pulse: false },
+  { id: 'thunder', label: 'Trovão', url: mkFrame('#fbbf24', '<path d="M50 8 L60 40 L45 40 L55 70 L35 40 L48 40 Z" fill="#fbbf24"/>'), pulse: false },
+  // --- PULSE ---
   { id: 'natal', label: 'Natal', url: 'natal.png', pulse: true },
   { id: 'cyber', label: 'Neon Cyber', url: mkFrame('#00f0ff', '<circle cx="50" cy="50" r="41" fill="none" stroke="#ff00c8" stroke-width="2" stroke-dasharray="10 6"/>'), pulse: true },
   { id: 'aura', label: 'Aura Fogo', url: mkFrame('#ff5722', '<circle cx="50" cy="50" r="42" fill="none" stroke="#ffc107" stroke-width="3" stroke-dasharray="14 8"/>'), pulse: true },
-  { id: 'royal', label: 'Coroa Real', url: mkFrame('#9c27b0', '<path d="M36 12 L43 3 L50 10 L57 3 L64 12 Z" fill="#e8b923"/>'), pulse: true }
+  { id: 'royal', label: 'Coroa Real', url: mkFrame('#9c27b0', '<path d="M36 12 L43 3 L50 10 L57 3 L64 12 Z" fill="#e8b923"/>'), pulse: true },
+  { id: 'galaxy', label: 'Galáxia', url: mkFrame('#7c3aed', '<circle cx="20" cy="30" r="2" fill="#fff"/><circle cx="80" cy="20" r="2" fill="#fff"/><circle cx="30" cy="70" r="2" fill="#fff"/><circle cx="70" cy="85" r="2" fill="#fff"/><circle cx="90" cy="60" r="2" fill="#fff"/><circle cx="10" cy="55" r="2" fill="#fff"/>'), pulse: true },
+  { id: 'rainbow', label: 'Arco-Íris', url: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff0000"/><stop offset="16%" stop-color="#ff8800"/><stop offset="32%" stop-color="#ffee00"/><stop offset="48%" stop-color="#00cc00"/><stop offset="64%" stop-color="#0099ff"/><stop offset="80%" stop-color="#4400ff"/><stop offset="100%" stop-color="#cc00ff"/></linearGradient></defs><circle cx="50" cy="50" r="46" fill="none" stroke="url(#g)" stroke-width="5"/></svg>`)}`, pulse: true },
+  { id: 'diamond', label: 'Diamante', url: mkFrame('#e0f7ff', '<path d="M50 2 L58 10 L50 18 L42 10 Z" fill="#7dd3fc"/><path d="M50 82 L58 90 L50 98 L42 90 Z" fill="#7dd3fc"/><path d="M2 50 L10 58 L18 50 L10 42 Z" fill="#7dd3fc"/><path d="M82 50 L90 58 L98 50 L90 42 Z" fill="#7dd3fc"/>'), pulse: true }
 ];
 
 export const ACH_ICONS = {
@@ -59,6 +71,8 @@ export const S = {
   currentServerId: null, currentServerData: null, currentChannelId: 'geral',
   currentDmType: 'dm', currentDmUid: null, currentGroupId: null, currentGroupData: null,
   lastSentMsgAt: 0, room: null,
+  replyTo: null,             // ✅ Mensagem sendo respondida
+  serverEmojis: {},          // ✅ Emojis customizados do servidor (opcional)
   onOpenSettings: null, onRenderAccount: null, onRenderPlanState: null, onRenderDiscover: null,
   onSendServerAudio: null, onSendServerGif: null, onSendDmAudio: null, onSendDmGif: null,
   onShowInviteModal: null, onSendFriendRequest: null, onOpenSupportModal: null, onOpenDm: null,

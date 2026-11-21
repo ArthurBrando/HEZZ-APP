@@ -3,7 +3,7 @@ import { db, S, $, esc, DEFAULT_AVATAR, dmPairId, maxUploadMB, labelState, fileT
 import { showToast, openView, openModal, closeModals, watchTyping, bindTyping } from "./ui.js";
 import { joinRoom, logCall, sendInviteTo } from "./calls.js";
 import { openUserProfileModal } from "./profile.js";
-import { renderMessage, setupInputPopups, checkSendCooldown } from "./chat.js";
+import { renderMessage, setupInputPopups, attachReplyToPayload } from "./chat.js";
 
 let friendsUnsub = null;
 let groupsUnsub = null;
@@ -164,6 +164,7 @@ function openHezzBotDm(){
   S.currentDmType = 'bot';
   S.currentDmUid = 'hezz_bot';
   S.currentGroupId = null;
+  S.replyTo = null;
   $("dm-header-name").textContent = "Hezz Bot";
   $("dm-header-sub").textContent = "BOT OFICIAL • Suporte & Alertas";
   $("dm-header-avatar").src = "foto.png";
@@ -183,6 +184,7 @@ export async function openDm(friendUid){
   S.currentDmType = 'dm';
   S.currentDmUid = friendUid;
   S.currentGroupId = null;
+  S.replyTo = null;
   $("dm-header-name").textContent = f.nick || "Amigo";
   $("dm-header-sub").textContent = "Conversa privada";
   $("dm-header-avatar").src = f.avatarUrl || DEFAULT_AVATAR;
@@ -209,6 +211,7 @@ async function openGroupDm(gid){
   S.currentGroupId = gid;
   S.currentGroupData = snap.val();
   S.currentDmUid = null;
+  S.replyTo = null;
   $("dm-header-name").textContent = S.currentGroupData.name || "Grupo Privado";
   $("dm-header-sub").textContent = `${Object.keys(S.currentGroupData.members || {}).length} membros`;
   $("dm-header-avatar").src = S.currentGroupData.avatarUrl || "foto.png";
@@ -244,22 +247,35 @@ function loadDmPath(msgPath, typingBarId, typingPath){
   else $(typingBarId).innerHTML = "";
 }
 
+// ✅ CORRIGIDO: retorna true/false, só marca lastSentMsgAt APÓS push bem-sucedido,
+// usa anti-duplo-clique de 150ms (não trava mais o envio), anexa replyTo.
 export async function sendDm(payload){
-  if (!S.currentUser) return;
-  if (!checkSendCooldown(0)) return;
-  S.lastSentMsgAt = Date.now();
+  if (!S.currentUser) return false;
+
+  // Anti duplo-clique leve (150ms) — não bloqueia envios normais
+  if (S.lastSentMsgAt && Date.now() - S.lastSentMsgAt < 150) return false;
+
   payload.senderUid = S.currentUser.uid;
   payload.senderNick = S.userProfile.nick || "Anônimo";
   payload.senderAvatar = S.userProfile.avatarUrl || "";
   payload.timestamp = Date.now();
 
+  // ✅ Anexa citação de resposta (Responder)
+  attachReplyToPayload(payload);
+
   let targetPath = null;
   if (S.currentDmType === 'group' && S.currentGroupId) targetPath = `groups/${S.currentGroupId}/messages`;
   else if (S.currentDmUid) targetPath = `dms/${dmPairId(S.currentUser.uid, S.currentDmUid)}/messages`;
-  if (!targetPath) return;
+  if (!targetPath) return false;
 
-  try { await push(ref(db, targetPath), payload); }
-  catch (err) { showToast("Erro ao enviar: " + err.message); }
+  try {
+    await push(ref(db, targetPath), payload);
+    S.lastSentMsgAt = Date.now();
+    return true;
+  } catch (err) {
+    showToast("Erro ao enviar: " + err.message);
+    return false;
+  }
 }
 
 function openGroupModal(mode, preselectUid = null){
@@ -315,19 +331,21 @@ export function initSocial(){
   });
   setupInputPopups($("dm-input"), $("dm-mention-popup"), null, false);
 
-  $("dm-send").addEventListener("click", () => {
+  // ✅ CORRIGIDO: só limpa o input se o envio der certo
+  $("dm-send").addEventListener("click", async () => {
     const text = $("dm-input").value.trim();
     if (!text) return;
     $("dm-mention-popup").classList.remove("show");
-    sendDm({ type: 'text', text });
-    $("dm-input").value = "";
+    const ok = await sendDm({ type: 'text', text });
+    if (ok) $("dm-input").value = "";
   });
   $("dm-input").addEventListener("keypress", (e) => { if (e.key === 'Enter') $("dm-send").click(); });
+
   $("dm-image-upload").addEventListener("change", async (e) => {
     const f = e.target.files[0]; if (!f) return;
     const maxBytes = maxUploadMB() * 1024 * 1024;
     if (f.size > maxBytes) { showToast(`Imagem muito grande (máx ${maxUploadMB()}MB)`); e.target.value = ""; return; }
-    try { const base64 = await fileToBase64(f, maxBytes); sendDm({ type: 'image', imageUrl: base64 }); }
+    try { const base64 = await fileToBase64(f, maxBytes); await sendDm({ type: 'image', imageUrl: base64 }); }
     catch (err) { showToast(err.message); }
     e.target.value = "";
   });

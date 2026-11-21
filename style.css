@@ -43,7 +43,7 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
 .ui-icon.sm{width:14px;height:14px;}
 .ui-icon.lg{width:20px;height:20px;}
 
-/* ===== SELO VERIFICADO AZUL (INSTAGRAM STYLE) & NICKS ===== */
+/* ===== SELO VERIFICADO AZUL & NICKS ===== */
 .verified-badge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex-shrink:0;vertical-align:middle;}
 .verified-badge svg{width:16px;height:16px;display:block;}
 .nick-grad{-webkit-background-clip:text!important;background-clip:text!important;-webkit-text-fill-color:transparent!important;color:transparent!important;}
@@ -189,7 +189,7 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
   .server-drawer.collapsed{width:250px;}
 }
 
-/* ===== CHAT, MENÇÕES, FERRAMENTAS, EMOJI + GIF KLIPY ===== */
+/* ===== CHAT ===== */
 .chat-messages{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;background:linear-gradient(180deg,var(--white) 0%, var(--gold-soft) 100%);}
 .message{display:flex;gap:10px;max-width:88%;position:relative;}
 .message.own{align-self:flex-end;flex-direction:row-reverse;}
@@ -321,7 +321,7 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
 .danger-zone{border:2px solid #f3c6c6;background:rgba(226,106,106,.08);border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:10px;}
 .call-item{display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid var(--border);}
 
-/* ===== MODO CINEMA (SALA DE CINEMA) ===== */
+/* ===== MODO CINEMA ===== */
 .cinema-theater{background:radial-gradient(circle at center top, #23161a 0%, #09090c 70%);}
 .cinema-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(16,16,22,.92);border-bottom:1px solid #2b232a;flex-wrap:wrap;}
 .cinema-header span{display:inline-flex;align-items:center;gap:6px;}
@@ -380,3 +380,160 @@ html,body{font-family:'Inter',system-ui,sans-serif;background:var(--white);color
 #banned-overlay button{background:var(--danger);}
 #login-overlay button.alt{background:var(--gold-soft);color:var(--text)}
 .mention{background:var(--gold-soft);color:var(--gold);font-weight:600;border-radius:4px;padding:0 3px}
+
+/* ============================================================
+   ✅ ADIÇÕES — RESPONDER, MENU SEGURAR MSG, TOGGLES, RESPONSIVIDADE
+   ============================================================ */
+
+/* ===== REPLY BAR (Responder) ===== */
+#reply-bar {
+  animation: replySlideIn .18s ease;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+@keyframes replySlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#reply-bar button:hover { color: #b8860b !important; }
+
+/* ===== MSG CONTEXT MENU (segurar mensagem) ===== */
+#msg-ctx-menu {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  animation: ctxPop .12s ease;
+}
+@keyframes ctxPop {
+  from { opacity: 0; transform: scale(.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+#msg-ctx-menu button { font-family: inherit; }
+[data-theme="dark"] #msg-ctx-menu,
+[data-theme="amoled"] #msg-ctx-menu,
+[data-theme="ocean"] #msg-ctx-menu {
+  background: #22242a !important;
+  color: #f1f3f5 !important;
+  border-color: #343741 !important;
+}
+[data-theme="dark"] #msg-ctx-menu button,
+[data-theme="amoled"] #msg-ctx-menu button,
+[data-theme="ocean"] #msg-ctx-menu button {
+  color: #f1f3f5 !important;
+}
+
+/* ===== TOGGLES DE CANAL (texto/mídia/voz/emoji) ===== */
+#chan-perms-box input[data-cperm] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--gold);
+}
+
+/* ===== ADMIN ROLES NO PERFIL DO USUÁRIO ===== */
+#upm-admin-roles-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: ctxPop .15s ease;
+}
+#upm-admin-roles-box .role-pill {
+  font-size: .65rem;
+  padding: 2px 8px;
+}
+#upm-roles-list button:hover {
+  background: var(--gold-soft);
+}
+
+/* ===== CITAÇÃO DA MENSAGEM RESPONDIDA ===== */
+.msg-reply-quote {
+  cursor: pointer;
+  transition: background .15s;
+}
+.msg-reply-quote:hover {
+  background: rgba(232,185,35,.16) !important;
+}
+[data-theme="dark"] .msg-reply-quote,
+[data-theme="amoled"] .msg-reply-quote,
+[data-theme="ocean"] .msg-reply-quote {
+  color: #adb5bd;
+  background: rgba(232,185,35,.08);
+}
+
+/* ===== RESPONSIVIDADE EXTRA ===== */
+
+/* Picker emoji em telas muito pequenas (< 380px) */
+@media (max-width: 380px) {
+  .emoji-picker {
+    left: 6px !important;
+    right: 6px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+  .emoji-grid { grid-template-columns: repeat(5, 1fr); }
+  #reply-bar {
+    margin: 4px 6px !important;
+    font-size: .72rem;
+    padding: 4px 8px !important;
+  }
+  #msg-ctx-menu {
+    min-width: 160px !important;
+    font-size: .8rem !important;
+  }
+}
+
+/* iOS safe areas */
+@supports (padding: max(0px)) {
+  .chat-input-area {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .sidebar {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Picker mais curto em landscape mobile */
+@media (max-height: 600px) {
+  .emoji-picker { height: 240px; }
+}
+
+/* Toque em mobile — sempre mostra ações */
+@media (hover: none) {
+  .msg-actions { opacity: 1 !important; }
+  .chan-item .chan-edit-btn { opacity: 1 !important; }
+}
+
+/* Tablet — server drawer overlay */
+@media (max-width: 900px) and (min-width: 769px) {
+  .server-drawer { width: 200px; }
+}
+
+/* Settings tabs — scroll suave no mobile */
+@media (max-width: 640px) {
+  #settings-tabs, #srv-settings-tabs {
+    scrollbar-width: none;
+  }
+  #settings-tabs::-webkit-scrollbar,
+  #srv-settings-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .main-content { padding: 20px 16px; }
+  .form-container { padding: 16px; }
+  .settings-body { padding: 14px; }
+}
+
+/* Scrollbar suave em listas grandes */
+.chat-messages::-webkit-scrollbar,
+.picker-body::-webkit-scrollbar,
+.settings-body::-webkit-scrollbar,
+.gif-grid::-webkit-scrollbar,
+#upm-roles-list::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-messages::-webkit-scrollbar-thumb,
+.picker-body::-webkit-scrollbar-thumb,
+.settings-body::-webkit-scrollbar-thumb,
+.gif-grid::-webkit-scrollbar-thumb,
+#upm-roles-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}

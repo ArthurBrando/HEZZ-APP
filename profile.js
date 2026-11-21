@@ -20,6 +20,20 @@ let editReportProof = "";
 let reportTarget = { uid: null, nick: "", avatar: "" };
 
 /* ============================================================
+   Helpers: permissões do viewer no servidor atual (sem import cycle)
+   ============================================================ */
+function amIAdminOfCurrentServer(){
+  if (!S.currentUser || !S.currentServerData) return false;
+  if (S.currentServerData.ownerUid === S.currentUser.uid) return true;
+  const m = S.currentServerData.members?.[S.currentUser.uid];
+  if (!m || !m.roleId) return false;
+  const r = S.currentServerData.roles?.[m.roleId];
+  if (!r || !r.perms) return false;
+  const p = r.perms;
+  return !!(p.admin || p.manageRoles);
+}
+
+/* ============================================================
    ESTILOS EXTRAS (injetados uma única vez)
    ============================================================ */
 function injectExtraAssets() {
@@ -206,7 +220,7 @@ function renderProfile(d) {
 }
 
 /* ============================================================
-   DECO PRESETS (usa DECO_PRESETS do state.js — 7 opções)
+   DECO PRESETS
    ============================================================ */
 function buildDecoPresets(sel) {
   const grid = $("deco-presets");
@@ -235,7 +249,7 @@ function buildDecoPresets(sel) {
 }
 
 /* ============================================================
-   FONT GRID (usa NICK_FONTS do state.js — 15 fontes Google)
+   FONT GRID
    ============================================================ */
 function buildFontGrid(sel) {
   const grid = $("nick-font-grid");
@@ -360,6 +374,108 @@ export function loadProfileIntoForm() {
 }
 
 /* ============================================================
+   ✅ BLOCO "+ CARGOS" NO PERFIL (só pra ADM/dono)
+   ============================================================ */
+function buildAdminRoleBlock(uid) {
+  const modal = $("user-profile-modal");
+  if (!modal) return;
+
+  // Remove bloco anterior se existir
+  const old = $("upm-admin-roles-box");
+  if (old) old.remove();
+
+  // Só mostra se: estamos em servidor + sou ADM + não é meu próprio perfil
+  if (!S.currentServerId || !S.currentServerData) return;
+  if (!S.currentUser || uid === S.currentUser.uid) return;
+  if (!amIAdminOfCurrentServer()) return;
+  if (!S.currentServerData.members?.[uid]) return; // não-membro: não faz sentido
+
+  const srv = S.currentServerData;
+  const member = srv.members?.[uid] || {};
+  const currentRoleId = member.roleId || null;
+  const currentRole = currentRoleId ? srv.roles?.[currentRoleId] : null;
+
+  const box = document.createElement("div");
+  box.id = "upm-admin-roles-box";
+  box.className = "pm-panel-box";
+
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:.72rem;font-weight:800;opacity:.7;letter-spacing:.4px;">CARGOS</span>
+        ${currentRole
+          ? `<span class="role-pill" style="background:${esc(currentRole.color || '#e8b923')}">${esc(currentRole.name)}</span>`
+          : `<span style="font-size:.75rem;opacity:.55;font-weight:600;">Nenhum cargo</span>`}
+      </div>
+      <button type="button" class="mini-btn gold" id="upm-add-role-btn" style="padding:4px 10px;font-size:.72rem;">+ Cargo</button>
+    </div>
+    <div id="upm-roles-list" style="display:none;flex-direction:column;gap:4px;margin-top:4px;max-height:180px;overflow-y:auto;"></div>
+  `;
+
+  // Insere depois do primeiro pm-panel-box (que é o painel de info)
+  const firstPanel = modal.querySelector(".pm-panel-box");
+  if (firstPanel && firstPanel.parentNode) {
+    firstPanel.parentNode.insertBefore(box, firstPanel.nextSibling);
+  } else {
+    modal.querySelector(".pm-body")?.appendChild(box);
+  }
+
+  const addBtn = box.querySelector("#upm-add-role-btn");
+  const listBox = box.querySelector("#upm-roles-list");
+
+  addBtn.onclick = () => {
+    if (listBox.style.display === "flex") {
+      listBox.style.display = "none";
+      return;
+    }
+    listBox.style.display = "flex";
+    listBox.innerHTML = "";
+
+    // Opção: remover cargo atual
+    if (currentRoleId) {
+      const rmBtn = document.createElement("button");
+      rmBtn.type = "button";
+      rmBtn.className = "mini-btn decline";
+      rmBtn.style.cssText = "padding:6px 10px;font-size:.75rem;text-align:left;justify-content:flex-start;";
+      rmBtn.textContent = "✕ Remover cargo atual";
+      rmBtn.onclick = async () => {
+        try {
+          await update(ref(db, `communities/${S.currentServerId}/members/${uid}`), { roleId: null });
+          showToast("Cargo removido");
+          buildAdminRoleBlock(uid);
+        } catch (err) { showToast("Erro: " + err.message); }
+      };
+      listBox.appendChild(rmBtn);
+    }
+
+    // Opções: adicionar outros cargos
+    const roles = srv.roles || {};
+    let hasAny = false;
+    Object.entries(roles).forEach(([rid, r]) => {
+      if (rid === currentRoleId) return;
+      hasAny = true;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini-btn";
+      b.style.cssText = "padding:6px 10px;font-size:.75rem;text-align:left;justify-content:flex-start;";
+      b.innerHTML = `<span class="role-pill" style="background:${esc(r.color || '#e8b923')};margin-right:6px;">${esc(r.name)}</span>`;
+      b.onclick = async () => {
+        try {
+          await update(ref(db, `communities/${S.currentServerId}/members/${uid}`), { roleId: rid });
+          showToast(`Cargo "${r.name}" atribuído`);
+          buildAdminRoleBlock(uid);
+        } catch (err) { showToast("Erro: " + err.message); }
+      };
+      listBox.appendChild(b);
+    });
+
+    if (!hasAny && !currentRoleId) {
+      listBox.innerHTML = '<div class="empty" style="font-size:.75rem;">Nenhum cargo criado neste servidor ainda.</div>';
+    }
+  };
+}
+
+/* ============================================================
    MODAL DE PERFIL DE USUÁRIO
    ============================================================ */
 export async function openUserProfileModal(uid) {
@@ -368,6 +484,9 @@ export async function openUserProfileModal(uid) {
   if (uid === "hezz_bot" || uid === "hezz_ticket_bot") {
     const modal = $("user-profile-modal");
     if (modal) modal.style.background = "";
+    // limpa bloco de cargos se sobrou
+    $("upm-admin-roles-box")?.remove();
+
     const banner = $("upm-banner");
     if (banner) {
       banner.style.backgroundImage = "none";
@@ -430,10 +549,11 @@ export async function openUserProfileModal(uid) {
       else { dc.style.display = "none"; dc.src = ""; }
     }
 
+    // ✅ Só UM selo verificado (o do #upm-verified). O nick só leva texto.
     const st = nickStyleAttr(u);
     const nk = $("upm-nick");
     if (nk) {
-      nk.innerHTML = `${esc(u.nick || "Usuário")} ${u.plan === "pulse" ? SVG_VERIFIED : ""}`;
+      nk.textContent = u.nick || "Usuário";
       nk.className = st.cls;
       nk.style.cssText = st.style;
     }
@@ -493,6 +613,9 @@ export async function openUserProfileModal(uid) {
         openModal("report-modal");
       };
     }
+
+    // ✅ Bloco "+ Cargos" (só quando ADM abrindo perfil de membro de servidor)
+    buildAdminRoleBlock(uid);
 
     openModal("user-profile-modal");
   } catch (err) {
