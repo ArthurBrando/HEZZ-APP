@@ -1,3 +1,5 @@
+--- START OF FILE servers.js ---
+
 import { ref, set, update, get, onValue, query, limitToLast, push, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { db, S, $, esc, todayKey, DEFAULT_AVATAR, dmPairId, isPulse, maxUploadMB, maxCommunities, canAccessAge, ageBadgeLabel, applyAgeBadge, fileToBase64 } from "./state.js";
 import { showToast, copyText, setOpen, openView, closeView, openModal, closeModals, watchTyping, bindTyping, fmt } from "./ui.js";
@@ -279,7 +281,10 @@ function switchServerChannel(chanId){
   S.serverChatUnsub = onValue(query(ref(db, path), limitToLast(60)), (snap) => {
     box.innerHTML = "";
     const msgs = [];
-    snap.forEach(c => msgs.push({ id: c.key, ...c.val() }));
+    // ✅ CORREÇÃO: uso de chaves para evitar retornar o resultado de push() ao Firebase
+    snap.forEach(c => {
+      msgs.push({ id: c.key, ...c.val() });
+    });
     if (!msgs.length) { box.innerHTML = '<div class="empty">Nenhuma mensagem neste canal ainda.</div>'; return; }
     msgs.forEach(m => renderMessage(m, box, { isServer: true, path, onSwitchChannel: switchServerChannel }));
     box.scrollTop = box.scrollHeight;
