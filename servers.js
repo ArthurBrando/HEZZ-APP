@@ -1,14 +1,24 @@
 import { ref, set, update, get, onValue, query, limitToLast, push, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { db, S, $, esc, todayKey, DEFAULT_AVATAR, dmPairId, isPulse, maxUploadMB, maxCommunities, userStrikes, canAccessAge, ageBadgeLabel, applyAgeBadge, fileToBase64 } from "./state.js";
+import { db, S, $, esc, todayKey, DEFAULT_AVATAR, dmPairId, isPulse, maxUploadMB, maxCommunities, canAccessAge, ageBadgeLabel, applyAgeBadge, fileToBase64 } from "./state.js";
 import { showToast, copyText, setOpen, openView, closeView, openModal, closeModals, watchTyping, bindTyping, fmt } from "./ui.js";
 import { joinRoom, openCinemaFromAnywhere } from "./calls.js";
 import { myMemberPerms, checkSendCooldown, renderMessage, setupInputPopups } from "./chat.js";
+
+const SVG_HASH = '<svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+const SVG_VOL = '<svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+const SVG_TAG = '<svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+const SVG_EDIT = '<svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SVG_INFO = '<svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+const SVG_CLOCK = '<svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+const SVG_CROWN = '<svg class="ui-icon sm" style="color:var(--gold)" viewBox="0 0 24 24"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>';
+const SVG_AWARD = '<svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>';
 
 let myCommunitiesUnsub = null;
 let allCommunitiesUnsub = null;
 let editCommunityAvatar = "";
 let editServerAvatarData = "";
 let editBotAvatarData = "";
+let editAchIconData = "";
 let pendingInviteServer = null;
 let serverEditingChanId = null;
 let editingRoleId = null;
@@ -55,7 +65,7 @@ function renderCommunities(list){
 
 export function renderDiscover(){
   const el = $("discover-list");
-  if (!el || userStrikes() >= 2) return;
+  if (!el) return;
   const q = ($("discover-search")?.value || "").trim().toLowerCase();
   el.innerHTML = "";
   const arr = Object.entries(S.allCommunitiesMap)
@@ -172,17 +182,16 @@ function renderServerUI(){
     Object.entries(chans).filter(([, ch]) => (ch.categoryId || Object.keys(cats)[0]) === catId).forEach(([chId, ch]) => {
       const item = document.createElement("div");
       item.className = "chan-item" + (chId === S.currentChannelId ? " active" : "");
-      const icon = ch.type === 'voice' ? '🔊' : ch.type === 'ticket' ? '🎫' : '#';
-      item.innerHTML = `<span>${icon}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(ch.name)}</span>`;
+      const icon = ch.type === 'voice' ? SVG_VOL : ch.type === 'ticket' ? SVG_TAG : SVG_HASH;
+      item.innerHTML = `${icon}<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(ch.name)}</span>`;
       if (isAdmin) {
         const eb = document.createElement("button");
-        eb.className = "chan-edit-btn"; eb.textContent = "✏️";
+        eb.className = "chan-edit-btn"; eb.innerHTML = SVG_EDIT;
         eb.onclick = (e) => { e.stopPropagation(); openEditChannelModal(chId, ch); };
         item.appendChild(eb);
       }
       item.onclick = () => {
         if (ch.type === 'voice') {
-          if (userStrikes() >= 2) { showToast("Calls bloqueadas (Alerta Nível 2)"); return; }
           joinRoom(`srv_${S.currentServerId}_${chId}`);
         } else {
           switchServerChannel(chId);
@@ -195,9 +204,11 @@ function renderServerUI(){
   });
 
   const curCh = chans[S.currentChannelId] || { name: "geral", type: "text" };
-  $("server-chan-title").textContent = (curCh.type === 'ticket' ? '🎫 ' : '# ') + (curCh.name || 'geral');
+  $("server-chan-title").innerHTML = (curCh.type === 'ticket' ? `${SVG_TAG} ` : '# ') + esc(curCh.name || 'geral');
   const rulesText = curCh.syncCat && cats[curCh.categoryId]?.rules ? cats[curCh.categoryId].rules : (curCh.rules || "");
-  $("server-chan-rules").textContent = rulesText ? `📜 ${rulesText}` : (srv.slowmode ? `🐢 Slowmode: ${srv.slowmode}s` : "");
+  $("server-chan-rules").innerHTML = rulesText
+    ? `${SVG_INFO} ${esc(rulesText)}`
+    : (srv.slowmode ? `${SVG_CLOCK} Slowmode: ${srv.slowmode}s` : "");
   $("server-ticket-close-btn").style.display = (curCh.type === 'ticket' && (isAdmin || curCh.ticketOwnerUid === S.currentUser.uid)) ? "inline-flex" : "none";
 }
 
@@ -275,7 +286,7 @@ function openServerInviteFriends(){
 
 function openServerSettings(tab){
   if (!S.currentServerData) return;
-  editServerAvatarData = ""; editBotAvatarData = "";
+  editServerAvatarData = ""; editBotAvatarData = ""; editAchIconData = "";
   $("srv-name").value = S.currentServerData.name || "";
   $("srv-avatar-url").value = S.currentServerData.avatarUrl || "";
   $("srv-age").value = S.currentServerData.ageRating || "all";
@@ -291,6 +302,7 @@ function openServerSettings(tab){
   document.querySelectorAll('#view-server-settings .subview').forEach(s => s.classList.toggle('active', s.id === 'sub-' + tab));
   renderServerMembersList();
   renderServerRolesList();
+  renderServerBadgesTab();
   openView('view-server-settings');
 }
 
@@ -303,19 +315,22 @@ function renderServerMembersList(){
   Object.entries(members).forEach(([uid, m]) => {
     const row = document.createElement("div");
     row.className = "list-item"; row.style.cursor = "default";
+    const statusSub = uid === S.currentServerData.ownerUid
+      ? `${SVG_CROWN} Dono`
+      : (m.timeoutUntil > Date.now() ? `${SVG_CLOCK} Em Timeout` : 'Membro');
     row.innerHTML = `<img class="avatar round" src="${m.avatarUrl || DEFAULT_AVATAR}" />
       <div class="list-item-info"><div class="list-item-name">${esc(m.nick || uid)}</div>
-      <div class="list-item-sub">${uid === S.currentServerData.ownerUid ? '👑 Dono' : (m.timeoutUntil > Date.now() ? '⏳ Em Timeout' : 'Membro')}</div></div>`;
+      <div class="list-item-sub">${statusSub}</div></div>`;
 
     if ((perms.admin || perms.manageRoles) && uid !== S.currentServerData.ownerUid) {
       const sel = document.createElement("select");
-      sel.style.cssText = "padding:6px;border-radius:8px;border:1px solid var(--gold-light);font-size:.75rem;";
+      sel.style.cssText = "padding:6px;border-radius:8px;border:1px solid var(--border);font-size:.75rem;background:var(--input-bg);color:var(--text);";
       sel.innerHTML = `<option value="">Sem cargo</option>` + Object.entries(roles).map(([rid, r]) => `<option value="${rid}" ${m.roleId === rid ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
       sel.onchange = () => update(ref(db, `communities/${S.currentServerId}/members/${uid}`), { roleId: sel.value || null });
       row.appendChild(sel);
     }
     if ((perms.admin || perms.timeoutMembers) && uid !== S.currentServerData.ownerUid && uid !== S.currentUser.uid) {
-      const tb = document.createElement("button"); tb.className = "mini-btn decline"; tb.textContent = "⏳"; tb.title = "Timeout";
+      const tb = document.createElement("button"); tb.className = "mini-btn decline"; tb.innerHTML = SVG_CLOCK; tb.title = "Timeout";
       tb.onclick = () => { timeoutTargetUid = uid; $("to-target-name").textContent = "Membro: " + (m.nick || uid); openModal("timeout-modal"); };
       row.appendChild(tb);
     }
@@ -332,6 +347,48 @@ function renderServerRolesList(){
     row.innerHTML = `<span class="role-pill" style="background:${r.color || '#e8b923'}">${esc(r.name)}</span><div class="list-item-info"></div><button class="mini-btn gold">Permissões</button>`;
     row.querySelector("button").onclick = () => openRoleEditModal(rid, r);
     box.appendChild(row);
+  });
+}
+
+function renderServerBadgesTab(){
+  const listEl = $("srv-badges-list");
+  if (!listEl) return;
+  listEl.innerHTML = "";
+  const badges = S.currentServerData?.badges || {};
+  const entries = Object.entries(badges);
+  const count = entries.length;
+
+  $("srv-badge-form").style.display = count >= 3 ? "none" : "flex";
+  $("srv-badge-limit-hint").textContent = `${count}/3 Conquistas criadas neste servidor.`;
+
+  if (!count) {
+    listEl.innerHTML = '<div class="empty">Nenhuma conquista criada. Crie até 3 no formulário acima!</div>';
+    return;
+  }
+
+  entries.forEach(([bid, b]) => {
+    const card = document.createElement("div");
+    card.className = "ach-card";
+    const condLabel = b.type === 'account_days'
+      ? `${b.threshold} dias de conta criada`
+      : `${b.threshold} mensagens enviadas neste servidor`;
+
+    card.innerHTML = `
+      <div class="ach-thumb">
+        ${b.iconUrl ? `<img src="${b.iconUrl}" />` : SVG_AWARD}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:.88rem;">${esc(b.title)}</div>
+        <div style="font-size:.72rem;color:var(--text-soft);">${condLabel}</div>
+      </div>
+      <button class="mini-btn decline" data-del-badge="${bid}">Excluir</button>
+    `;
+    card.querySelector('[data-del-badge]').onclick = async () => {
+      await remove(ref(db, `communities/${S.currentServerId}/badges/${bid}`));
+      showToast("Conquista removida!");
+      renderServerBadgesTab();
+    };
+    listEl.appendChild(card);
   });
 }
 
@@ -373,7 +430,7 @@ function renderExistingTickets(){
   });
 }
 
-async function sendServerMessage(payload){
+export async function sendServerMessage(payload){
   if (!S.currentServerId || !S.currentUser) return;
   const meMember = S.currentServerData?.members?.[S.currentUser.uid];
   if (meMember?.timeoutUntil && meMember.timeoutUntil > Date.now()) {
@@ -395,7 +452,12 @@ async function sendServerMessage(payload){
   const path = S.currentChannelId === 'geral' && !S.currentServerData?.channels?.geral
     ? `communities/${S.currentServerId}/chats/geral`
     : `communities/${S.currentServerId}/messages/${S.currentChannelId}`;
-  try { await push(ref(db, path), payload); }
+  try {
+    await push(ref(db, path), payload);
+    // Incrementa contagem de mensagens do membro no servidor para destravar conquistas
+    const curMsgs = (meMember?.msgCount || 0) + 1;
+    await update(ref(db, `communities/${S.currentServerId}/members/${S.currentUser.uid}`), { msgCount: curMsgs });
+  }
   catch (err) { showToast("Erro ao enviar: " + err.message); }
 }
 
@@ -403,9 +465,10 @@ export function initServers(){
   S.onRenderDiscover = renderDiscover;
   S.onShowInviteModal = showInviteModal;
   S.onSendServerAudio = (audioUrl) => sendServerMessage({ type: 'audio', audioUrl });
+  S.onSendServerPayload = (payload) => sendServerMessage(payload);
 
-  $("discover-search").addEventListener("input", renderDiscover);
-  $("discover-btn").addEventListener("click", renderDiscover);
+  $("discover-search")?.addEventListener("input", renderDiscover);
+  $("discover-btn")?.addEventListener("click", renderDiscover);
 
   $("btn-join-invite").addEventListener("click", () => {
     const code = prompt("Cole o código ou link de convite do servidor:");
@@ -471,7 +534,7 @@ export function initServers(){
           geral: { name: "geral", type: "text", categoryId: catTextId, rules: "Seja respeitoso no chat.", syncCat: true },
           call1: { name: "Call Geral", type: "voice", categoryId: catVoiceId, rules: "", syncCat: true }
         },
-        members: { [S.currentUser.uid]: { uid: S.currentUser.uid, nick: S.userProfile.nick || "Anônimo", avatarUrl: S.userProfile.avatarUrl || "", joinedAt: Date.now() } }
+        members: { [S.currentUser.uid]: { uid: S.currentUser.uid, nick: S.userProfile.nick || "Anônimo", avatarUrl: S.userProfile.avatarUrl || "", joinedAt: Date.now(), msgCount: 0 } }
       });
       await set(ref(db, `invites/${inviteCode}`), { communityId: cid, createdAt: Date.now() });
       await update(ref(db, `users/${S.currentUser.uid}/communities/${cid}`), { name, bio, avatarUrl, ageRating, joinedAt: Date.now() });
@@ -550,6 +613,7 @@ export function initServers(){
       btn.classList.add('active');
       document.querySelectorAll('#view-server-settings .subview').forEach(s => s.classList.remove('active'));
       $('sub-' + btn.dataset.sub).classList.add('active');
+      if (btn.dataset.sub === 'srv-badges') renderServerBadgesTab();
     });
   });
 
@@ -606,6 +670,37 @@ export function initServers(){
     });
     showToast("Bot de Tickets atualizado!");
   };
+
+  // Conquistas / Badges do Servidor
+  $("srv-ach-icon-file")?.addEventListener("change", async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try { editAchIconData = await fileToBase64(f, 2 * 1024 * 1024); }
+    catch (err) { showToast(err.message); }
+    e.target.value = "";
+  });
+
+  $("srv-save-badge-btn")?.addEventListener("click", async () => {
+    if (!S.currentServerId || !S.currentServerData) return;
+    const title = $("srv-badge-title")?.value.trim();
+    const threshold = Number($("srv-badge-threshold")?.value || 1);
+    const type = $("srv-badge-type")?.value || 'messages';
+    const iconUrl = editAchIconData || $("srv-badge-icon-url")?.value.trim() || "";
+
+    if (!title) { showToast("Preencha o nome da conquista!"); return; }
+    const currentBadges = S.currentServerData.badges || {};
+    if (Object.keys(currentBadges).length >= 3) { showToast("Limite máximo de 3 conquistas atingido!"); return; }
+
+    const bid = "ach_" + Date.now();
+    await set(ref(db, `communities/${S.currentServerId}/badges/${bid}`), {
+      id: bid, title, type, threshold, iconUrl, createdAt: Date.now()
+    });
+    if ($("srv-badge-title")) $("srv-badge-title").value = "";
+    if ($("srv-badge-threshold")) $("srv-badge-threshold").value = "10";
+    if ($("srv-badge-icon-url")) $("srv-badge-icon-url").value = "";
+    editAchIconData = "";
+    showToast("Conquista criada!");
+    renderServerBadgesTab();
+  });
 
   $("to-confirm-btn").onclick = async () => {
     if (!timeoutTargetUid || !S.currentServerId) return;
@@ -694,7 +789,13 @@ export function initServers(){
     inp.value = "";
   });
 
-  $("server-chat-input").addEventListener("keypress", (e) => { if (e.key === 'Enter') $("server-btn-send").click(); });
+  $("server-chat-input").addEventListener("keypress", (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      $("server-btn-send").click();
+    }
+  });
+
   $("server-image-upload").addEventListener("change", async (e) => {
     const f = e.target.files[0]; if (!f) return;
     const maxBytes = maxUploadMB() * 1024 * 1024;

@@ -6,13 +6,38 @@ import { initProfile, ensureUserDoc, startHeartbeat, setupDisconnect, subscribeP
 import { initSocial, subscribeFriends, subscribeGroups, subscribeRequests, subscribeDmAlerts } from "./social.js";
 import { initServers, subscribeCommunities, subscribeAllCommunities, openInviteByCode } from "./servers.js";
 import { initSettings } from "./settings.js";
+import { initThemes } from "./theme.js";
+import { buildPickerUI } from "./gifs.js";
 
+// Inicializa todos os módulos
 initUI();
+initThemes();
 initCalls();
 initProfile();
 initSocial();
 initServers();
 initSettings();
+
+// Constrói os pickers de Emojis + GIFs KLIPY para Servidor e DM
+buildPickerUI(
+  $("server-emoji-picker"),
+  (emoji) => {
+    const inp = $("server-chat-input");
+    inp.value += emoji + " ";
+    inp.focus();
+  },
+  (gifUrl) => S.onSendServerPayload?.({ type: "gif", gifUrl })
+);
+
+buildPickerUI(
+  $("dm-emoji-picker"),
+  (emoji) => {
+    const inp = $("dm-input");
+    inp.value += emoji + " ";
+    inp.focus();
+  },
+  (gifUrl) => S.onSendDmPayload?.({ type: "gif", gifUrl })
+);
 
 if (!auth) {
   showErrorBanner("Falha ao inicializar Firebase Auth.");

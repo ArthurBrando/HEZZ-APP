@@ -1,5 +1,5 @@
 import { ref, set, get, push, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { db, S, esc, DEFAULT_AVATAR, userStrikes, ageBadgeLabel } from "./state.js";
+import { db, S, esc, DEFAULT_AVATAR, ageBadgeLabel, isPulse } from "./state.js";
 import { showToast, fmt, createAudioPlayerHTML, bindAudioPlayer } from "./ui.js";
 import { joinRoom } from "./calls.js";
 import { openUserProfileModal } from "./profile.js";
@@ -10,6 +10,7 @@ const SVG_CHART = '<svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="18" y1=
 const SVG_TAG = '<svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
 const SVG_PIN = '<svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
 const SVG_TRASH = '<svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+const SVG_VERIFIED = '<svg class="verified-badge" viewBox="0 0 24 24"><path fill="#0095f6" d="M12 2l2.4 2.1 3.2-.4 1.3 2.9 3.1 1-.4 3.2 2.1 2.4-2.1 2.4.4 3.2-3.1 1-1.3 2.9-3.2-.4L12 22l-2.4-2.1-3.2.4-1.3-2.9-3.1-1 .4-3.2-2.1-2.4 2.1-2.4-.4-3.2 3.1-1 1.3-2.9 3.2.4z"/><polyline points="8.5 12 11 14.5 15.5 9.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 export function myMemberPerms(){
   if (!S.currentServerData || !S.currentUser) return {};
@@ -24,12 +25,11 @@ export function myMemberPerms(){
 }
 
 export function checkSendCooldown(slowmodeSec = 0){
-  const strikeDelay = userStrikes() >= 2 ? 15 : 0;
-  const reqSec = Math.max(slowmodeSec, strikeDelay);
+  const reqSec = Math.max(0, slowmodeSec);
   if (!reqSec) return true;
   const elapsed = (Date.now() - S.lastSentMsgAt) / 1000;
   if (elapsed < reqSec) {
-    showToast(`Aguarde ${Math.ceil(reqSec - elapsed)}s para enviar outra mensagem`);
+    showToast(`Slowmode ativo: aguarde ${Math.ceil(reqSec - elapsed)}s`);
     return false;
   }
   return true;
@@ -68,8 +68,13 @@ export function renderMessage(m, container, ctx = {}){
     if (r) roleBadge = `<span class="role-pill" style="background:${r.color || '#e8b923'}">${esc(r.name)}</span>`;
   }
 
+  const verifiedIcon = (m.plan === 'pulse' || (m.senderUid === S.currentUser?.uid && isPulse())) ? SVG_VERIFIED : '';
+
   let contentHtml = '';
   if (m.type === 'text') contentHtml = `<div class="message-text">${fmt(m.text || '')}</div>`;
+  else if (m.type === 'gif') {
+    contentHtml = `<div class="gif-msg-wrap"><img src="${esc(m.gifUrl)}" class="message-image" /><span class="gif-msg-tag">GIF KLIPY</span></div>`;
+  }
   else if (m.type === 'image') contentHtml = `<img src="${m.imageUrl}" class="message-image" onclick="window.open(this.src,'_blank')" />`;
   else if (m.type === 'audio') contentHtml = createAudioPlayerHTML(m.audioUrl);
   else if (m.type === 'invite') contentHtml = `<div class="message-text">${SVG_PHONE} Convite para call <button class="btn btn-primary" data-room="${esc(m.roomId)}" style="padding:6px 12px;margin-left:6px">Entrar</button></div>`;
@@ -108,7 +113,7 @@ export function renderMessage(m, container, ctx = {}){
     <img src="${avatar}" class="message-avatar" data-user="${esc(m.senderUid || '')}" />
     <div class="message-content">
       <div class="message-header">
-        <span class="message-sender" data-user="${esc(m.senderUid || '')}">${esc(m.senderNick || 'Anônimo')} ${roleBadge}</span>
+        <span class="message-sender" data-user="${esc(m.senderUid || '')}">${esc(m.senderNick || 'Anônimo')} ${verifiedIcon} ${roleBadge}</span>
         <span class="message-time">${time}</span>
       </div>
       ${contentHtml}

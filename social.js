@@ -1,5 +1,5 @@
 import { ref, set, update, get, onValue, query, limitToLast, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { db, S, $, esc, DEFAULT_AVATAR, dmPairId, maxUploadMB, userStrikes, labelState, fileToBase64 } from "./state.js";
+import { db, S, $, esc, DEFAULT_AVATAR, dmPairId, maxUploadMB, labelState, fileToBase64 } from "./state.js";
 import { showToast, openView, openModal, closeModals, watchTyping, bindTyping } from "./ui.js";
 import { joinRoom, logCall, sendInviteTo } from "./calls.js";
 import { openUserProfileModal } from "./profile.js";
@@ -99,7 +99,7 @@ export async function sendFriendRequest(targetUid){
   if (!S.currentUser) return;
   targetUid = (targetUid || '').trim();
   if (!targetUid) { showToast("Informe o ID do usuário"); return; }
-  if (targetUid === S.currentUser.uid) { showToast("Você não pode adicionar você mesmo"); return; }
+  if (targetUid === S.currentUser.uid) { showToast("Você não pode adicionar a si mesmo"); return; }
   if (S.friendsMap[targetUid]) { showToast("Essa pessoa já é seu amigo"); return; }
   try {
     const snap = await get(ref(db, `users/${targetUid}`));
@@ -244,7 +244,7 @@ function loadDmPath(msgPath, typingBarId, typingPath){
   else $(typingBarId).innerHTML = "";
 }
 
-async function sendDm(payload){
+export async function sendDm(payload){
   if (!S.currentUser) return;
   if (!checkSendCooldown(0)) return;
   S.lastSentMsgAt = Date.now();
@@ -284,6 +284,7 @@ export function initSocial(){
   S.onSendFriendRequest = sendFriendRequest;
   S.onOpenDm = openDm;
   S.onSendDmAudio = (audioUrl) => sendDm({ type: 'audio', audioUrl });
+  S.onSendDmPayload = (payload) => sendDm(payload);
   S.onOpenSupportModal = () => { $("sup-subject").value = ""; $("sup-message").value = ""; openModal("support-modal"); };
 
   $("btn-add-friend").addEventListener("click", () => sendFriendRequest($("friend-id-input").value));
@@ -341,7 +342,6 @@ export function initSocial(){
 
   $("dm-call-btn").addEventListener("click", async () => {
     if (!S.currentUser || S.room) return;
-    if (userStrikes() >= 2) { showToast("Calls bloqueadas (Alerta Nível 2)"); return; }
     const id = push(ref(db, "rooms")).key;
     if (S.currentDmType === 'dm' && S.currentDmUid) {
       const f = S.friendsMap[S.currentDmUid];
