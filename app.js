@@ -6,46 +6,46 @@ import { initProfile, ensureUserDoc, startHeartbeat, setupDisconnect, subscribeP
 import { initSocial, subscribeFriends, subscribeGroups, subscribeRequests, subscribeDmAlerts } from "./social.js";
 import { initServers, subscribeCommunities, subscribeAllCommunities, openInviteByCode } from "./servers.js";
 import { initSettings } from "./settings.js";
-import { initThemes } from "./theme.js";
-import { buildPickerUI } from "./gifs.js";
+import { initTheme } from "./theme.js";
 
-// Inicializa todos os módulos
-initUI();
-initThemes();
-initCalls();
-initProfile();
-initSocial();
-initServers();
-initSettings();
+// Inicializa todos os módulos principais na ordem correta
+try {
+  initUI();
+  initTheme();
+  initCalls();
+  initProfile();
+  initSocial();
+  initServers();
+  initSettings();
+} catch (err) {
+  console.error("[HEZZ] Erro ao inicializar módulos:", err);
+}
 
-// Constrói os pickers de Emojis + GIFs KLIPY para Servidor e DM
-buildPickerUI(
-  $("server-emoji-picker"),
-  (emoji) => {
-    const inp = $("server-chat-input");
-    inp.value += emoji + " ";
-    inp.focus();
-  },
-  (gifUrl) => S.onSendServerPayload?.({ type: "gif", gifUrl })
-);
+// Função de segurança para remover o splash screen
+const hideSplash = () => {
+  const s = $("splash");
+  if (!s) return;
+  s.style.transition = "opacity 0.4s ease";
+  s.style.opacity = "0";
+  setTimeout(() => s.remove(), 450);
+};
 
-buildPickerUI(
-  $("dm-emoji-picker"),
-  (emoji) => {
-    const inp = $("dm-input");
-    inp.value += emoji + " ";
-    inp.focus();
-  },
-  (gifUrl) => S.onSendDmPayload?.({ type: "gif", gifUrl })
-);
+// Fallback: se em 2.5s o Firebase ou conexão demorar, remove o splash para a tela de login aparecer
+setTimeout(hideSplash, 2500);
 
 if (!auth) {
   showErrorBanner("Falha ao inicializar Firebase Auth.");
+  hideSplash();
 } else {
   const tryAuth = (fn) => async () => {
     $("login-err").textContent = "";
-    try { await fn(); } catch (e) { $("login-err").textContent = e.code || e.message; }
+    try {
+      await fn();
+    } catch (e) {
+      $("login-err").textContent = e.code || e.message;
+    }
   };
+
   const cred = () => [$("login-email").value.trim(), $("login-pass").value];
 
   $("login-btn").onclick  = tryAuth(() => signInWithEmailAndPassword(auth, ...cred()));
@@ -54,22 +54,16 @@ if (!auth) {
   $("anon-btn").onclick   = tryAuth(() => signInAnonymously(auth));
   $("banned-logout-btn").onclick = () => signOut(auth);
 
-  const t0 = Date.now();
-  const hideSplash = () => setTimeout(() => {
-    const s = $("splash");
-    if (!s) return;
-    s.style.opacity = 0;
-    setTimeout(() => s.remove(), 500);
-  }, Math.max(0, 1400 - (Date.now() - t0)));
-
   onAuthStateChanged(auth, async (user) => {
     hideSplash();
     $("login-overlay").style.display = user ? "none" : "grid";
+
     if (!user) {
       S.currentUser = null;
       $("banned-overlay").style.display = "none";
       return;
     }
+
     S.currentUser = user;
     try {
       await ensureUserDoc(user.uid);
@@ -90,7 +84,7 @@ if (!auth) {
         myIdEl.onclick = () => copyText(user.uid);
       }
 
-      const urlInv = new URLSearchParams(location.search).get('invite');
+      const urlInv = new URLSearchParams(location.search).get("invite");
       if (urlInv) openInviteByCode(urlInv);
     } catch (err) {
       showErrorBanner("Erro no banco: " + (err.code || err.message));
